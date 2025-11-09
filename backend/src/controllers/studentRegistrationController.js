@@ -70,7 +70,7 @@ const uploadStudents = async (req, res) => {
         
         // Determine entry type based on student number
         const isLateralEntry = studentNumber >= 400 && studentNumber <= 500;
-        const entryType = isLateralEntry ? 'Lateral' : 'CET';
+        const entryType = isLateralEntry ? 'LATERAL' : 'REGULAR';
         
         // Calculate current semester
         let calculatedSemester = 1;
@@ -101,7 +101,7 @@ const uploadStudents = async (req, res) => {
           usn: USN,
           email: `temp_${USN}@temp.edu`,
           password: hashedPassword,
-          role: 'student',
+          role: 'STUDENT',
           profile: {
             firstName: Name.split(' ')[0],
             lastName: Name.split(' ').slice(1).join(' ') || Name.split(' ')[0]
