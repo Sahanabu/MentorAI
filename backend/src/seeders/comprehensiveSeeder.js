@@ -130,7 +130,8 @@ class ComprehensiveSeeder {
       const department = i <= 50 ? 'CS' : 'EC';
       const entryType = i % 10 === 0 ? ENTRY_TYPES.LATERAL : ENTRY_TYPES.REGULAR;
       const admissionYear = 2021;
-      const usn = `2KA${admissionYear.toString().slice(-2)}${department}${i.toString().padStart(3, '0')}`;
+      const deptNumber = i <= 50 ? i : i - 50;
+      const usn = `2KA${admissionYear.toString().slice(-2)}${department}${deptNumber.toString().padStart(3, '0')}`;
       
       studentData.push({
         usn,
