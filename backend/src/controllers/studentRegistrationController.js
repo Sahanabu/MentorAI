@@ -27,7 +27,7 @@ const uploadStudents = async (req, res) => {
 
     for (const studentData of students) {
       try {
-        const { USN, name, email, phone, department, semester, section } = studentData;
+        const { USN, name, email, phone, department, semester, section, admissionYear, entryType, fatherName, motherName, address, dateOfBirth, gender, category, bloodGroup } = studentData;
 
         // Validate required fields
         if (!USN || !name || !department) {
@@ -56,16 +56,30 @@ const uploadStudents = async (req, res) => {
 
         const newStudent = new User({
           usn: USN,
-          name,
           email: email || `${USN}@college.edu`,
-          phone: phone || '',
           password: hashedPassword,
           role: 'student',
+          profile: {
+            firstName: name.split(' ')[0],
+            lastName: name.split(' ').slice(1).join(' ') || name.split(' ')[0],
+            phone: phone || '',
+            fatherName: fatherName || '',
+            motherName: motherName || '',
+            address: address || '',
+            dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+            gender: gender || '',
+            category: category || '',
+            bloodGroup: bloodGroup || ''
+          },
           department: department.toUpperCase(),
-          semester: semester || 1,
-          section: section || 'A',
+          studentInfo: {
+            admissionYear: admissionYear || new Date().getFullYear(),
+            entryType: entryType || 'CET',
+            currentSemester: semester || 1,
+            section: section || 'A'
+          },
           isActive: true,
-          createdBy: req.user.id
+          createdBy: req.user.userId
         });
 
         await newStudent.save();
@@ -109,13 +123,40 @@ const getTemplate = (req, res) => {
   try {
     const templateData = [
       {
-        USN: '1MS21CS001',
+        USN: '2KA21CS001',
         name: 'John Doe',
         email: 'john.doe@college.edu',
         phone: '9876543210',
         department: 'CS',
         semester: 1,
-        section: 'A'
+        section: 'A',
+        admissionYear: 2021,
+        entryType: 'CET',
+        fatherName: 'Robert Doe',
+        motherName: 'Jane Doe',
+        address: '123 Main Street, Bangalore',
+        dateOfBirth: '2003-05-15',
+        gender: 'Male',
+        category: 'General',
+        bloodGroup: 'O+'
+      },
+      {
+        USN: '2KA21CS002',
+        name: 'Jane Smith',
+        email: 'jane.smith@college.edu',
+        phone: '9876543211',
+        department: 'CS',
+        semester: 1,
+        section: 'A',
+        admissionYear: 2021,
+        entryType: 'COMEDK',
+        fatherName: 'Michael Smith',
+        motherName: 'Sarah Smith',
+        address: '456 Oak Avenue, Mysore',
+        dateOfBirth: '2003-08-22',
+        gender: 'Female',
+        category: 'OBC',
+        bloodGroup: 'A+'
       }
     ];
 
@@ -171,7 +212,7 @@ const deactivateStudents = async (req, res) => {
 
     await User.updateMany(
       { _id: { $in: studentIds }, role: 'student' },
-      { isActive: false, deactivatedAt: new Date(), deactivatedBy: req.user.id }
+      { isActive: false, deactivatedAt: new Date(), deactivatedBy: req.user.userId }
     );
 
     res.json({

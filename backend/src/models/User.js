@@ -42,7 +42,23 @@ const userSchema = new mongoose.Schema({
       type: String,
       match: /^[6-9]\d{9}$/
     },
-    avatar: String
+    avatar: String,
+    fatherName: String,
+    motherName: String,
+    address: String,
+    dateOfBirth: Date,
+    gender: {
+      type: String,
+      enum: ['Male', 'Female', 'Other']
+    },
+    category: {
+      type: String,
+      enum: ['General', 'OBC', 'SC', 'ST', 'Other']
+    },
+    bloodGroup: {
+      type: String,
+      enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+    }
   },
   department: {
     type: String,
@@ -64,6 +80,10 @@ const userSchema = new mongoose.Schema({
       type: Number,
       min: 1,
       max: 8
+    },
+    section: {
+      type: String,
+      default: 'A'
     },
     mentorId: {
       type: mongoose.Schema.Types.ObjectId,

@@ -1,7 +1,27 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const { auth, authorize } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
+
+const authorize = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Insufficient permissions'
+      });
+    }
+
+    next();
+  };
+};
 const {
   uploadStudents,
   getTemplate,
@@ -39,9 +59,9 @@ const upload = multer({
 });
 
 // Routes
-router.post('/upload', auth, authorize(['hod']), upload.single('studentsFile'), uploadStudents);
-router.get('/template', auth, authorize(['hod']), getTemplate);
-router.get('/department/:department', auth, authorize(['hod', 'mentor']), getStudentsByDepartment);
-router.put('/deactivate', auth, authorize(['hod']), deactivateStudents);
+router.post('/upload', authenticate, authorize(['hod']), upload.single('studentsFile'), uploadStudents);
+router.get('/template', authenticate, authorize(['hod']), getTemplate);
+router.get('/department/:department', authenticate, authorize(['hod', 'mentor']), getStudentsByDepartment);
+router.put('/deactivate', authenticate, authorize(['hod']), deactivateStudents);
 
 module.exports = router;

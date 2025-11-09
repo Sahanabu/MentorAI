@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Upload, Download, Users, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Alert, AlertDescription } from '../ui/alert';
-import { Progress } from '../ui/progress';
+import { Button } from '../layout/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../layout/ui/card';
+import { Alert, AlertDescription } from '../layout/ui/alert';
+import { Progress } from '../layout/ui/progress';
 
 interface RegistrationResult {
   total: number;

@@ -4,14 +4,17 @@ import { toast } from "sonner";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import StatCard from "@/components/layout/StatCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/layout/ui/card";
-import { Users, AlertTriangle, TrendingUp, Award, BookOpen, Brain } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, AlertTriangle, TrendingUp, Award, BookOpen, Brain, UserPlus } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { dashboardService, HODDashboardData } from "@/services/dashboardService";
+import StudentRegistration from "@/components/hod/StudentRegistration";
 
 const HodDashboard = () => {
   const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState<HODDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showRegistration, setShowRegistration] = useState(false);
 
   useEffect(() => {
     const role = sessionStorage.getItem("userRole");
@@ -65,10 +68,28 @@ const HodDashboard = () => {
     <DashboardLayout role="hod">
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Department Overview</h1>
-          <p className="text-muted-foreground">Computer Science & Engineering Department Analytics</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Department Overview</h1>
+            <p className="text-muted-foreground">Computer Science & Engineering Department Analytics</p>
+          </div>
+          <Button 
+            onClick={() => setShowRegistration(!showRegistration)}
+            className="flex items-center gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            {showRegistration ? 'Hide Registration' : 'Register Students'}
+          </Button>
         </div>
+
+        {/* Student Registration Section */}
+        {showRegistration && (
+          <Card>
+            <CardContent className="pt-6">
+              <StudentRegistration />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
