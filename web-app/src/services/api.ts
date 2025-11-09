@@ -95,24 +95,24 @@ class ApiService {
   }
 
   private getToken(): string | null {
-    return localStorage.getItem('accessToken');
+    return sessionStorage.getItem('accessToken');
   }
 
   private getRefreshToken(): string | null {
-    return localStorage.getItem('refreshToken');
+    return sessionStorage.getItem('refreshToken');
   }
 
   private setToken(token: string): void {
-    localStorage.setItem('accessToken', token);
+    sessionStorage.setItem('accessToken', token);
   }
 
   private setRefreshToken(token: string): void {
-    localStorage.setItem('refreshToken', token);
+    sessionStorage.setItem('refreshToken', token);
   }
 
   private removeTokens(): void {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
   }
 
   private async refreshToken(refreshToken: string) {
@@ -149,6 +149,8 @@ class ApiService {
 
   public clearAuthTokens(): void {
     this.removeTokens();
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('userRole');
   }
 
   public async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {

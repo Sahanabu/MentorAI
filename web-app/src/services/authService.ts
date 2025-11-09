@@ -1,53 +1,69 @@
 import { LoginRequest, RegisterRequest, AuthResponse, User } from '../types/auth';
 import { apiService } from './api';
+import { toast } from 'sonner';
 
 class AuthService {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
-    const response = await apiService.post<AuthResponse>('/auth/login', credentials);
-    
-    if (response.success && response.data) {
-      // Store tokens
-      apiService.setAuthTokens(
-        response.data.tokens.accessToken,
-        response.data.tokens.refreshToken
-      );
+    try {
+      const response = await apiService.post<AuthResponse>('/auth/login', credentials);
       
-      // Store user data
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      localStorage.setItem('userRole', response.data.user.role.toLowerCase());
+      if (response.success && response.data) {
+        // Store tokens
+        apiService.setAuthTokens(
+          response.data.tokens.accessToken,
+          response.data.tokens.refreshToken
+        );
+        
+        // Store user data in sessionStorage
+        sessionStorage.setItem('user', JSON.stringify(response.data.user));
+        sessionStorage.setItem('userRole', response.data.user.role.toLowerCase());
+        
+        toast.success('Login successful!');
+      }
+      
+      return response;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Login failed';
+      toast.error(message);
+      throw new Error(message);
     }
-    
-    return response;
   }
 
   async register(userData: RegisterRequest): Promise<AuthResponse> {
-    const response = await apiService.post<AuthResponse>('/auth/register', userData);
-    
-    if (response.success && response.data) {
-      // Store tokens
-      apiService.setAuthTokens(
-        response.data.tokens.accessToken,
-        response.data.tokens.refreshToken
-      );
+    try {
+      const response = await apiService.post<AuthResponse>('/auth/register', userData);
       
-      // Store user data
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      localStorage.setItem('userRole', response.data.user.role.toLowerCase());
+      if (response.success && response.data) {
+        // Store tokens
+        apiService.setAuthTokens(
+          response.data.tokens.accessToken,
+          response.data.tokens.refreshToken
+        );
+        
+        // Store user data in sessionStorage
+        sessionStorage.setItem('user', JSON.stringify(response.data.user));
+        sessionStorage.setItem('userRole', response.data.user.role.toLowerCase());
+        
+        toast.success('Registration successful!');
+      }
+      
+      return response;
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Registration failed';
+      toast.error(message);
+      throw new Error(message);
     }
-    
-    return response;
   }
 
   async logout(): Promise<void> {
     try {
       await apiService.post('/auth/logout');
+      toast.success('Logged out successfully');
     } catch (error) {
       console.error('Logout API call failed:', error);
     } finally {
-      // Clear local storage
+      // Clear session storage
       apiService.clearAuthTokens();
-      localStorage.removeItem('user');
-      localStorage.removeItem('userRole');
     }
   }
 
@@ -72,18 +88,18 @@ class AuthService {
   }
 
   getCurrentUser(): User | null {
-    const userStr = localStorage.getItem('user');
+    const userStr = sessionStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
   }
 
   isAuthenticated(): boolean {
-    const token = localStorage.getItem('accessToken');
+    const token = sessionStorage.getItem('accessToken');
     const user = this.getCurrentUser();
     return !!(token && user);
   }
 
   getUserRole(): string | null {
-    return localStorage.getItem('userRole');
+    return sessionStorage.getItem('userRole');
   }
 
   hasRole(role: string): boolean {

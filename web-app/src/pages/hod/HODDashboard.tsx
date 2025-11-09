@@ -14,7 +14,7 @@ const HodDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
+    const role = sessionStorage.getItem("userRole");
     if (role !== "hod") {
       navigate("/login");
       return;

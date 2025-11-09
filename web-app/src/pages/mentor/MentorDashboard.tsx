@@ -17,7 +17,7 @@ const MentorDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
+    const role = sessionStorage.getItem("userRole");
     if (role !== "mentor") {
       navigate("/login");
       return;

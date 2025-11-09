@@ -36,19 +36,20 @@ class AuthService {
    * Register new user
    */
   async register(userData) {
-    const { email, password, role, usn, profile, department } = userData;
+    try {
+      const { email, password, role, usn, profile, department } = userData;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({
-      $or: [
-        { email },
-        ...(usn ? [{ usn }] : [])
-      ]
-    });
+      // Check if user already exists
+      const existingUser = await User.findOne({
+        $or: [
+          { email },
+          ...(usn ? [{ usn }] : [])
+        ]
+      });
 
-    if (existingUser) {
-      throw new Error('User already exists with this email or USN');
-    }
+      if (existingUser) {
+        throw new Error('User already exists with this email or USN');
+      }
 
     // Parse USN for students
     let studentInfo = null;
@@ -92,6 +93,10 @@ class AuthService {
       user: userResponse,
       tokens
     };
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw new Error(error.message || 'Registration failed');
+    }
   }
 
   /**
