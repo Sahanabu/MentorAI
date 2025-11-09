@@ -88,4 +88,8 @@ router.get('/profile', authenticate, authController.getProfile);
 router.put('/profile', authenticate, updateProfileValidation, authController.updateProfile);
 router.put('/change-password', authenticate, changePasswordValidation, authController.changePassword);
 
+// Student registration routes
+const studentRegistrationRoutes = require('./studentRegistration');
+router.use('/students', studentRegistrationRoutes);
+
 module.exports = router;

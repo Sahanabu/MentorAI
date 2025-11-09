@@ -98,6 +98,15 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  deactivatedAt: Date,
+  deactivatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   lastLogin: Date,
   refreshToken: String
 }, {

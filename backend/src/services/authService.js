@@ -102,9 +102,15 @@ class AuthService {
   /**
    * Login user
    */
-  async login(email, password) {
-    // Find user
-    const user = await User.findOne({ email, isActive: true });
+  async login(identifier, password) {
+    // Find user by email or USN
+    const user = await User.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { usn: identifier.toUpperCase() }
+      ],
+      isActive: true
+    });
     if (!user) {
       throw new Error('Invalid credentials');
     }
