@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:5.0
+    container_name: mentortrack-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: mentortrack_ai
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - mentortrack-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: mentortrack-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - mentortrack-network
+
+  # Backend API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mentortrack-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/mentortrack_ai?authSource=admin
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev-jwt-secret-key
+      AI_SERVICE_URL: http://ai-service:8000
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - mentortrack-network
+
+  # AI Service
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: mentortrack-ai-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      PYTHONPATH: /app/src
+      MODEL_PATH: /app/data/models
+    volumes:
+      - ./ai-service:/app
+      - ai_models:/app/data/models
+    networks:
+      - mentortrack-network
+
+  # Web Application
+  web-app:
+    build:
+      context: ./web-app
+      dockerfile: Dockerfile
+    container_name: mentortrack-web-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:5000
+      REACT_APP_AI_SERVICE_URL: http://localhost:8000
+    volumes:
+      - ./web-app:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - mentortrack-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: mentortrack-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - web-app
+    networks:
+      - mentortrack-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+  ai_models:
+
+networks:
+  mentortrack-network:
+    driver: bridge

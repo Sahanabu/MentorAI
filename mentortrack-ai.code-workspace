@@ -1,0 +1,37 @@
+{
+  "folders": [
+    {
+      "name": "Root",
+      "path": "."
+    },
+    {
+      "name": "Backend",
+      "path": "./backend"
+    },
+    {
+      "name": "AI Service", 
+      "path": "./ai-service"
+    },
+    {
+      "name": "Web App",
+      "path": "./web-app"
+    }
+  ],
+  "settings": {
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "typescript.suggest.autoImports": true,
+    "eslint.workingDirectories": [
+      "web-app",
+      "backend"
+    ]
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode.vscode-typescript-next",
+      "bradlc.vscode-tailwindcss",
+      "esbenp.prettier-vscode",
+      "ms-python.python",
+      "ms-vscode.vscode-json"
+    ]
+  }
+}
