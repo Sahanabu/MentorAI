@@ -58,6 +58,22 @@ const StudentRegistration: React.FC = () => {
   const uploadStudents = async () => {
     if (!file) return;
 
+    const token = sessionStorage.getItem('token');
+    const userRole = sessionStorage.getItem('userRole');
+    
+    console.log('Token:', token ? 'Present' : 'Missing');
+    console.log('User Role:', userRole);
+    
+    if (!token) {
+      console.error('No authentication token found');
+      return;
+    }
+    
+    if (userRole !== 'hod') {
+      console.error('Only HODs can register students');
+      return;
+    }
+
     setUploading(true);
     const formData = new FormData();
     formData.append('studentsFile', file);
@@ -66,10 +82,16 @@ const StudentRegistration: React.FC = () => {
       const response = await fetch('http://localhost:5000/api/auth/students/upload', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
+
+      if (response.status === 401) {
+        console.error('Unauthorized - please login again');
+        // Redirect to login or show error
+        return;
+      }
 
       const data = await response.json();
       

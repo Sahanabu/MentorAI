@@ -6,14 +6,17 @@ import StatCard from "@/components/layout/StatCard";
 import RiskBadge from "@/components/layout/RiskBadge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/layout/ui/card";
 import { Progress } from "@/components/layout/ui/progress";
-import { Brain, BookOpen, Calendar, Award, TrendingUp, AlertCircle } from "lucide-react";
+import { Button } from "@/components/layout/ui/button";
+import { Brain, BookOpen, Calendar, Award, TrendingUp, AlertCircle, Calculator } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { dynamicDashboardService, DynamicStudentData } from "@/services/dynamicDashboardService";
+import SGPACalculator from "@/components/student/SGPACalculator";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState<DynamicStudentData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSGPACalculator, setShowSGPACalculator] = useState(false);
 
   useEffect(() => {
     const role = sessionStorage.getItem("userRole");
@@ -65,10 +68,28 @@ const StudentDashboard = () => {
     <DashboardLayout role="student">
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome Back, {dashboardData.profile.name}!</h1>
-          <p className="text-muted-foreground">{dashboardData.profile.usn} • Semester {dashboardData.profile.semester} • {dashboardData.profile.department}</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Welcome Back, {dashboardData.profile.name}!</h1>
+            <p className="text-muted-foreground">{dashboardData.profile.usn} • Semester {dashboardData.profile.semester} • {dashboardData.profile.department}</p>
+          </div>
+          <Button 
+            onClick={() => setShowSGPACalculator(!showSGPACalculator)}
+            className="flex items-center gap-2"
+          >
+            <Calculator className="h-4 w-4" />
+            {showSGPACalculator ? 'Hide Calculator' : 'SGPA Calculator'}
+          </Button>
         </div>
+
+        {/* SGPA Calculator Section */}
+        {showSGPACalculator && (
+          <Card>
+            <CardContent className="pt-6">
+              <SGPACalculator />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
