@@ -8,11 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/layout/ui/progress";
 import { Brain, BookOpen, Calendar, Award, TrendingUp, AlertCircle } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { dashboardService, StudentDashboardData } from "@/services/dashboardService";
+import { dynamicDashboardService, DynamicStudentData } from "@/services/dynamicDashboardService";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const [dashboardData, setDashboardData] = useState<StudentDashboardData | null>(null);
+  const [dashboardData, setDashboardData] = useState<DynamicStudentData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ const StudentDashboard = () => {
 
     const loadDashboardData = async () => {
       try {
-        const data = await dashboardService.getStudentDashboard();
+        const data = await dynamicDashboardService.getStudentDashboard();
         setDashboardData(data);
         toast.success(`Welcome back, ${data.profile.name}!`);
       } catch (error) {

@@ -16,7 +16,7 @@ const StudentAttendance = () => {
   const [selectedSemester, setSelectedSemester] = useState("current");
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
+    const role = sessionStorage.getItem("userRole");
     if (role !== "student") {
       navigate("/login");
     }

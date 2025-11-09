@@ -15,6 +15,7 @@ import StudentAttendance from "./pages/student/StudentAttendance";
 import HodDashboard from "./pages/hod/HODDashboard";
 import HODDepartment from "./pages/hod/HODDepartment";
 import HODAnalytics from "./pages/hod/HODAnalytics";
+import HODMentorAssignment from "./pages/hod/HODMentorAssignment";
 import MentorDashboard from "./pages/mentor/MentorDashboard";
 import MentorStudents from "./pages/mentor/MentorStudents";
 import MentorAtRisk from "./pages/mentor/MentorAtRisk";
@@ -24,17 +25,29 @@ import TeacherStudents from "./pages/teacher/TeacherStudents";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles: string[] }) => {
-  const user = store.getState().auth.user;
-  const isAuthenticated = store.getState().auth.isAuthenticated;
+  const token = sessionStorage.getItem('accessToken');
+  const userStr = sessionStorage.getItem('user');
+  const userRole = sessionStorage.getItem('userRole');
 
-  if (!isAuthenticated || !user) {
+  console.log('ProtectedRoute check:', {
+    token: token ? 'exists' : 'missing',
+    userStr: userStr ? 'exists' : 'missing',
+    userRole,
+    allowedRoles,
+    currentPath: window.location.pathname
+  });
+
+  if (!token || !userStr || !userRole) {
+    console.log('ProtectedRoute: Redirecting to login - missing auth data');
     return <Navigate to="/login" replace />;
   }
 
-  if (!allowedRoles.includes(user.role)) {
+  if (!allowedRoles.includes(userRole.toUpperCase())) {
+    console.log('ProtectedRoute: Redirecting to home - role not allowed');
     return <Navigate to="/" replace />;
   }
 
+  console.log('ProtectedRoute: Access granted');
   return <>{children}</>;
 };
 
@@ -57,6 +70,7 @@ const App = () => (
             <Route path="/hod" element={<ProtectedRoute allowedRoles={['HOD']}><HodDashboard /></ProtectedRoute>} />
             <Route path="/hod/department" element={<ProtectedRoute allowedRoles={['HOD']}><HODDepartment /></ProtectedRoute>} />
             <Route path="/hod/analytics" element={<ProtectedRoute allowedRoles={['HOD']}><HODAnalytics /></ProtectedRoute>} />
+            <Route path="/hod/mentor-assignment" element={<ProtectedRoute allowedRoles={['HOD']}><HODMentorAssignment /></ProtectedRoute>} />
             <Route path="/mentor" element={<ProtectedRoute allowedRoles={['MENTOR']}><MentorDashboard /></ProtectedRoute>} />
             <Route path="/mentor/students" element={<ProtectedRoute allowedRoles={['MENTOR']}><MentorStudents /></ProtectedRoute>} />
             <Route path="/mentor/at-risk" element={<ProtectedRoute allowedRoles={['MENTOR']}><MentorAtRisk /></ProtectedRoute>} />

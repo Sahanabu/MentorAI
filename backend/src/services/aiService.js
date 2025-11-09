@@ -26,25 +26,37 @@ class AIService {
       // Prepare features for AI model
       const features = this.prepareFeatures(student, assessments);
 
-      // Call AI service
-      const response = await axios.post(`${this.aiServiceUrl}/predict/semester`, {
-        features,
-        student_id: studentId
-      });
+      // Call enhanced AI service
+      const response = await axios.post(`${this.aiServiceUrl}/api/predict/comprehensive`, features);
 
-      // Save prediction to database
-      const prediction = new Prediction({
-        studentId,
-        predictionType: 'SEMESTER',
-        semester: student.studentInfo.currentSemester,
-        inputFeatures: features,
-        prediction: response.data.prediction,
-        explanation: response.data.explanation,
-        modelVersion: response.data.model_version || 'v1.0'
-      });
+      if (response.data.success) {
+        // Save prediction to database
+        const prediction = new Prediction({
+          studentId,
+          predictionType: 'SEMESTER',
+          semester: student.studentInfo.currentSemester,
+          inputFeatures: features,
+          prediction: {
+            riskLevel: response.data.risk_assessment.risk_level,
+            probability: response.data.risk_assessment.confidence,
+            predictedScore: response.data.performance_prediction.predicted_score,
+            confidence: response.data.performance_prediction.confidence
+          },
+          explanation: {
+            topFeatures: response.data.insights.map(insight => ({
+              feature: insight.title,
+              impact: 0.8,
+              description: insight.description
+            }))
+          },
+          modelVersion: response.data.model_version || 'v2.0'
+        });
 
-      await prediction.save();
-      return prediction;
+        await prediction.save();
+        return prediction;
+      } else {
+        throw new Error('AI service returned error');
+      }
     } catch (error) {
       console.error('AI prediction failed:', error);
       // Return fallback prediction
@@ -58,24 +70,27 @@ class AIService {
   prepareFeatures(student, assessments) {
     const totalClasses = assessments.reduce((sum, a) => sum + (a.attendance?.totalClasses || 0), 0);
     const attendedClasses = assessments.reduce((sum, a) => sum + (a.attendance?.attendedClasses || 0), 0);
-    const attendancePercentage = totalClasses > 0 ? (attendedClasses / totalClasses) * 100 : 0;
+    const attendancePercentage = totalClasses > 0 ? (attendedClasses / totalClasses) * 100 : 85;
 
     const internalMarks = assessments.map(a => 
       Math.max(a.internals?.internal1 || 0, a.internals?.internal2 || 0, a.internals?.internal3 || 0)
     );
-    const bestOfTwo = internalMarks.length > 0 ? Math.max(...internalMarks) : 0;
+    const bestOfTwo = internalMarks.length > 0 ? Math.max(...internalMarks) : 16;
 
-    const assignmentMarks = assessments.reduce((sum, a) => sum + (a.assignments?.totalMarks || 0), 0) / assessments.length;
-    const behaviorScore = assessments.reduce((sum, a) => sum + (a.behaviorScore || 7), 0) / assessments.length;
+    const assignmentMarks = assessments.reduce((sum, a) => sum + (a.assignments?.totalMarks || 0), 0) / (assessments.length || 1);
+    const behaviorScore = assessments.reduce((sum, a) => sum + (a.behaviorScore || 8), 0) / (assessments.length || 1);
 
     return {
       attendance: Math.round(attendancePercentage),
-      bestOfTwo: bestOfTwo,
-      assignments: Math.round(assignmentMarks || 0),
-      behaviorScore: Math.round(behaviorScore || 7),
-      backlogCount: student.studentInfo?.activeBacklogCount || 0,
-      previousSgpa: student.studentInfo?.cgpa || 0,
-      currentSemester: student.studentInfo?.currentSemester || 5
+      internal_marks: bestOfTwo,
+      assignment_marks: Math.round(assignmentMarks || 15),
+      behavior_score: Math.round(behaviorScore || 8),
+      previous_cgpa: student.studentInfo?.cgpa || 7.5,
+      backlog_count: student.studentInfo?.activeBacklogCount || 0,
+      semester: student.studentInfo?.currentSemester || 5,
+      study_hours: 6.0,
+      family_income: 3,
+      extracurricular: Math.random() > 0.5 ? 1 : 0
     };
   }
 
@@ -107,8 +122,12 @@ class AIService {
    */
   async getDepartmentRiskAnalytics(department) {
     try {
-      const response = await axios.get(`${this.aiServiceUrl}/analytics/department/${department}`);
-      return response.data;
+      const response = await axios.get(`${this.aiServiceUrl}/api/analytics/department/${department}`);
+      if (response.data.success) {
+        return response.data.analytics;
+      } else {
+        throw new Error('AI analytics service error');
+      }
     } catch (error) {
       console.error('AI analytics failed:', error);
       return this.getFallbackAnalytics(department);

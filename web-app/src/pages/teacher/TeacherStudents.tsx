@@ -13,7 +13,7 @@ const TeacherStudents = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
+    const role = sessionStorage.getItem("userRole");
     if (role !== "teacher") {
       navigate("/login");
     }

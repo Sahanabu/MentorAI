@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Brain, LogOut, LayoutDashboard, Users, BookOpen, ClipboardList } from "lucide-react";
+import { GraduationCap, Brain, LogOut, LayoutDashboard, Users, BookOpen, ClipboardList, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
@@ -14,8 +14,10 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const location = useLocation();
 
   const handleLogout = () => {
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userEmail");
+    sessionStorage.removeItem("userRole");
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("refreshToken");
     navigate("/login");
   };
 
@@ -38,6 +40,7 @@ const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
     hod: [
       { icon: LayoutDashboard, label: "Dashboard", path: "/hod" },
       { icon: Users, label: "Department", path: "/hod/department" },
+      { icon: UserCheck, label: "Mentor Assignment", path: "/hod/mentor-assignment" },
       { icon: BookOpen, label: "Analytics", path: "/hod/analytics" },
     ],
   };

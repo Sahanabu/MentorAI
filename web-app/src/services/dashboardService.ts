@@ -138,7 +138,7 @@ class DashboardService {
         backlogs: analytics.backlogs.active.length
       },
       riskAssessment: {
-        level: prediction?.prediction.riskLevel || 'SAFE',
+        level: this.mapRiskLevel(prediction?.prediction.riskLevel || 'SAFE'),
         factors: this.extractRiskFactors(prediction?.inputFeatures),
         confidence: prediction?.prediction.confidence * 100 || 0
       },
@@ -290,6 +290,49 @@ class DashboardService {
       case 'NEEDS_ATTENTION': return 'hsl(var(--warning))';
       case 'AT_RISK': return 'hsl(var(--destructive))';
       default: return 'hsl(var(--muted))';
+    }
+  }
+
+  private getFallbackAnalytics() {
+    return {
+      semesterSGPA: { 5: { sgpa: 8.2 } },
+      assessments: [
+        { subjectId: { subjectName: 'Data Structures' }, totalMarks: 85, attendance: { percentage: 92 } },
+        { subjectId: { subjectName: 'Database Systems' }, totalMarks: 78, attendance: { percentage: 88 } },
+        { subjectId: { subjectName: 'Web Development' }, totalMarks: 91, attendance: { percentage: 95 } }
+      ],
+      backlogs: { active: [] },
+      performanceTrend: [
+        { month: 'Jan', cgpa: 7.8 },
+        { month: 'Feb', cgpa: 8.0 },
+        { month: 'Mar', cgpa: 8.2 },
+        { month: 'Apr', cgpa: 8.1 }
+      ]
+    };
+  }
+
+  private getFallbackPrediction() {
+    return {
+      prediction: {
+        riskLevel: 'SAFE',
+        confidence: 0.85
+      },
+      inputFeatures: {
+        attendance: 92,
+        bestOfTwo: 18,
+        assignments: 15,
+        backlogCount: 0,
+        behaviorScore: 8
+      }
+    };
+  }
+
+  private mapRiskLevel(backendLevel: string): 'low' | 'medium' | 'high' {
+    switch (backendLevel) {
+      case 'SAFE': return 'low';
+      case 'NEEDS_ATTENTION': return 'medium';
+      case 'AT_RISK': return 'high';
+      default: return 'low';
     }
   }
 }

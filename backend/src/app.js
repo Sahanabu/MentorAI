@@ -15,6 +15,7 @@ const analyticsRoutes = require('./routes/analytics');
 const predictionRoutes = require('./routes/predictions');
 const mentorAssignmentRoutes = require('./routes/mentorAssignments');
 const aiPredictionRoutes = require('./routes/aiPredictions');
+const exportRoutes = require('./routes/export');
 
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./middleware/logger');
@@ -80,6 +81,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/mentor-assignments', mentorAssignmentRoutes);
 app.use('/api/ai-predictions', aiPredictionRoutes);
+app.use('/api/analytics/export', exportRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

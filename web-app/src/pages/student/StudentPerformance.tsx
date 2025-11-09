@@ -50,8 +50,11 @@ const StudentPerformance = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
+    console.log('StudentPerformance component mounted');
+    const role = sessionStorage.getItem("userRole");
+    console.log('Role check in StudentPerformance:', { role, expected: 'student' });
     if (role !== "student") {
+      console.log('Role mismatch, redirecting to login');
       navigate("/login");
     }
   }, [navigate]);
@@ -329,15 +332,13 @@ const StudentPerformance = () => {
               <CardDescription>Your academic performance over time vs class average</CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{
-                cgpa: { label: "Your CGPA", color: "hsl(var(--primary))" },
-                classAverage: { label: "Class Average", color: "hsl(var(--muted-foreground))" }
-              }}>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={semesterTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="semester" />
                   <YAxis domain={[6, 10]} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Tooltip />
                   <Line
                     type="monotone"
                     dataKey="cgpa"
@@ -354,7 +355,8 @@ const StudentPerformance = () => {
                     dot={{ fill: "var(--color-classAverage)", r: 4 }}
                   />
                 </LineChart>
-              </ChartContainer>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
 
@@ -368,15 +370,13 @@ const StudentPerformance = () => {
               <CardDescription>Subject performance vs attendance radar</CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{
-                performance: { label: "Performance", color: "hsl(var(--primary))" },
-                attendance: { label: "Attendance", color: "hsl(var(--success))" }
-              }}>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData}>
                   <PolarGrid />
                   <PolarAngleAxis dataKey="subject" />
                   <PolarRadiusAxis domain={[0, 100]} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Tooltip />
                   <Radar
                     name="Performance"
                     dataKey="performance"
@@ -392,7 +392,8 @@ const StudentPerformance = () => {
                     fillOpacity={0.2}
                   />
                 </RadarChart>
-              </ChartContainer>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -408,12 +409,8 @@ const StudentPerformance = () => {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-center">
-              <ChartContainer config={{
-                "A+": { label: "A+", color: "hsl(var(--success))" },
-                "A": { label: "A", color: "hsl(var(--primary))" },
-                "B+": { label: "B+", color: "hsl(var(--warning))" },
-                "B": { label: "B", color: "hsl(var(--destructive))" }
-              }}>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
                 <RechartsPieChart>
                   <Pie
                     data={gradeDistribution}
@@ -427,9 +424,10 @@ const StudentPerformance = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Tooltip />
                 </RechartsPieChart>
-              </ChartContainer>
+                </ResponsiveContainer>
+              </div>
             </div>
           </CardContent>
         </Card>

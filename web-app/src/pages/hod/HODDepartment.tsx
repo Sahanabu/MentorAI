@@ -13,7 +13,7 @@ const HODDepartment = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
+    const role = sessionStorage.getItem("userRole");
     if (role !== "hod") {
       navigate("/login");
     }

@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from api.prediction_routes import router as prediction_router
 from api.model_routes import router as model_router
 from api.health_routes import router as health_router
+from api.enhanced_routes import router as enhanced_router
 from utils.logger import setup_logger
 
 # Load environment variables
@@ -50,6 +51,7 @@ async def global_exception_handler(request, exc):
 # Include routers
 app.include_router(health_router, prefix="/health", tags=["Health"])
 app.include_router(prediction_router, prefix="/predict", tags=["Predictions"])
+app.include_router(enhanced_router, prefix="/api", tags=["Enhanced AI"])
 app.include_router(model_router, prefix="/models", tags=["Models"])
 
 # Root endpoint

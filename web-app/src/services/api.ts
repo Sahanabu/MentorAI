@@ -65,25 +65,37 @@ class ApiService {
 
         // Handle 401 errors (unauthorized)
         if (error.response?.status === 401 && !originalRequest._retry) {
+          console.log('API 401 Error:', {
+            url: originalRequest.url,
+            method: originalRequest.method,
+            hasRefreshToken: !!this.getRefreshToken()
+          });
+          
           originalRequest._retry = true;
 
           try {
             // Try to refresh token
             const refreshToken = this.getRefreshToken();
             if (refreshToken) {
+              console.log('Attempting token refresh...');
               const response = await this.refreshToken(refreshToken);
               const { accessToken } = response.data.tokens;
               
               // Update stored token
               this.setToken(accessToken);
+              console.log('Token refreshed successfully');
               
               // Retry original request
               originalRequest.headers.Authorization = `Bearer ${accessToken}`;
               return this.api(originalRequest);
             }
           } catch (refreshError) {
-            // Refresh failed, redirect to login
-            this.handleAuthError();
+            console.log('Token refresh failed:', refreshError);
+            // Only handle auth error if it's actually an auth endpoint
+            if (originalRequest.url?.includes('/auth/') || originalRequest.url?.includes('/profile')) {
+              console.log('Triggering auth error handler');
+              this.handleAuthError();
+            }
             return Promise.reject(refreshError);
           }
         }
@@ -121,17 +133,25 @@ class ApiService {
   }
 
   private handleAuthError(): void {
+    console.log('handleAuthError called:', {
+      currentPath: window.location.pathname,
+      willRedirect: !window.location.pathname.includes('/login')
+    });
+    
     this.removeTokens();
-    // Redirect to login page
-    window.location.href = '/login';
-    toast.error('Session expired. Please login again.');
+    // Only redirect if not already on login page
+    if (!window.location.pathname.includes('/login')) {
+      console.log('Redirecting to login due to auth error');
+      window.location.href = '/login';
+      toast.error('Session expired. Please login again.');
+    }
   }
 
   private handleApiError(error: any): void {
     const message = error.response?.data?.message || error.message || 'An error occurred';
     
-    // Don't show toast for certain errors
-    const silentErrors = [401, 403];
+    // Don't show toast for certain errors or missing routes
+    const silentErrors = [401, 403, 404];
     if (!silentErrors.includes(error.response?.status)) {
       toast.error(message);
     }

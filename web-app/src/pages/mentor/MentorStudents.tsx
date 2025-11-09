@@ -16,7 +16,7 @@ const MentorStudents = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
+    const role = sessionStorage.getItem("userRole");
     if (role !== "mentor") {
       navigate("/login");
     }
