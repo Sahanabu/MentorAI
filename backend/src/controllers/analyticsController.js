@@ -65,6 +65,32 @@ class AnalyticsController {
         }
       ]);
 
+      // Get semester-wise student distribution
+      const semesterDistribution = await User.aggregate([
+        {
+          $match: {
+            role: 'STUDENT',
+            department: department.toUpperCase(),
+            isActive: true
+          }
+        },
+        {
+          $group: {
+            _id: '$studentInfo.currentSemester',
+            count: { $sum: 1 },
+            regularCount: {
+              $sum: { $cond: [{ $eq: ['$studentInfo.entryType', 'REGULAR'] }, 1, 0] }
+            },
+            lateralCount: {
+              $sum: { $cond: [{ $eq: ['$studentInfo.entryType', 'LATERAL'] }, 1, 0] }
+            }
+          }
+        },
+        {
+          $sort: { _id: 1 }
+        }
+      ]);
+
       // Get backlog statistics
       const backlogStats = await Backlog.aggregate([
         {
@@ -105,6 +131,7 @@ class AnalyticsController {
             clearedBacklogs
           },
           semesterPerformance,
+          semesterDistribution,
           passRate: semesterPerformance.length > 0 
             ? semesterPerformance.reduce((sum, sem) => sum + (sem.passedStudents / sem.totalStudents), 0) / semesterPerformance.length * 100
             : 0

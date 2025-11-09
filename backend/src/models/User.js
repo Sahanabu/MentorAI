@@ -99,6 +99,15 @@ const userSchema = new mongoose.Schema({
       type: Number,
       default: 0,
       min: 0
+    },
+    isGraduated: {
+      type: Boolean,
+      default: false
+    },
+    graduationDate: Date,
+    totalCreditsEarned: {
+      type: Number,
+      default: 0
     }
   },
   // Teacher-specific fields

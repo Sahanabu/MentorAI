@@ -10,6 +10,7 @@
     "test:watch": "jest --watch",
     "seed": "node src/scripts/seedDatabase.js",
     "seed:comprehensive": "node src/scripts/seedDatabase.js",
+    "seed:real": "node src/scripts/seedRealData.js",
     "build": "echo 'No build step required for Node.js'"
   },
   "dependencies": {

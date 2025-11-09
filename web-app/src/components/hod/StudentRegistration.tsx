@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Upload, Download, Users, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '../layout/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../layout/ui/card';
@@ -23,6 +23,19 @@ const StudentRegistration: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<RegistrationResult | null>(null);
   const [details, setDetails] = useState<RegistrationDetails | null>(null);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (uploading) {
+        e.preventDefault();
+        e.returnValue = 'Student upload is in progress. Are you sure you want to leave?';
+        return 'Student upload is in progress. Are you sure you want to leave?';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [uploading]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -287,7 +300,7 @@ const StudentRegistration: React.FC = () => {
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           <strong>Excel Format:</strong> File must contain exactly 2 columns - USN and Name. 
-          USN format: 2KA21CS001. Students login using USN only.
+          USN format: 2KA24CS001 (Regular: 001-399, Lateral: 400-490). Students login using USN only.
         </AlertDescription>
       </Alert>
     </div>

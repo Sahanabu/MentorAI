@@ -68,8 +68,8 @@ const uploadStudents = async (req, res) => {
         const currentYear = new Date().getFullYear();
         const currentMonth = new Date().getMonth() + 1;
         
-        // Determine entry type based on student number
-        const isLateralEntry = studentNumber >= 400 && studentNumber <= 500;
+        // Determine entry type based on student number (400-490 for lateral entry)
+        const isLateralEntry = studentNumber >= 400 && studentNumber <= 490;
         const entryType = isLateralEntry ? 'LATERAL' : 'REGULAR';
         
         // Calculate current semester
@@ -77,11 +77,12 @@ const uploadStudents = async (req, res) => {
         const yearsDiff = currentYear - academicYear;
         
         if (isLateralEntry) {
-          // Lateral entry students start from 3rd semester
+          // Lateral entry students join in 3rd semester (AY 2024-25 for 2KA24CS4xx)
+          // They are currently in 5th semester (2025-26)
           if (currentMonth >= 6) { // After June, odd semesters
-            calculatedSemester = 3 + (yearsDiff * 2) + 1;
+            calculatedSemester = 3 + (yearsDiff * 2) - 1;
           } else { // Before June, even semesters
-            calculatedSemester = 3 + (yearsDiff * 2);
+            calculatedSemester = 3 + (yearsDiff * 2) - 2;
           }
         } else {
           // Regular students start from 1st semester

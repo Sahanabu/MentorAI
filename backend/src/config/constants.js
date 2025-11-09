@@ -60,8 +60,8 @@ const USN_PATTERNS = {
   YEAR_DIGITS: 2,
   DEPT_DIGITS: 2,
   SERIAL_DIGITS: 3,
-  REGULAR_RANGE: { min: 1, max: 200 },
-  LATERAL_RANGE: { min: 201, max: 300 }
+  REGULAR_RANGE: { min: 1, max: 399 },
+  LATERAL_RANGE: { min: 400, max: 490 }
 };
 
 // Assessment Constants

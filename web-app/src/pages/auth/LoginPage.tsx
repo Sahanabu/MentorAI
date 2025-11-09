@@ -123,7 +123,58 @@ const LoginPage = () => {
               <TabsTrigger value="hod" onClick={() => setDemoCredentials('hod')}>HOD</TabsTrigger>
             </TabsList>
 
-            {['student', 'teacher', 'mentor', 'hod'].map((role) => (
+            <TabsContent value="student">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="usn-student">USN</Label>
+                  <Input
+                    id="usn-student"
+                    type="text"
+                    placeholder="2KA24CS001"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password-student">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password-student"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter USN for first login"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                      disabled={isLoading}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    First login: Use your USN as password. If login fails, contact your mentor for password reset.
+                  </p>
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Sign in as Student"}
+                </Button>
+              </form>
+            </TabsContent>
+
+            {['teacher', 'mentor', 'hod'].map((role) => (
               <TabsContent key={role} value={role}>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
@@ -172,6 +223,7 @@ const LoginPage = () => {
                 </form>
               </TabsContent>
             ))}
+            ))
           </Tabs>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">

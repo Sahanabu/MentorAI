@@ -123,7 +123,7 @@ predictionSchema.statics.getAtRiskStudents = function(mentorId, riskLevels = ['A
     },
     {
       $match: {
-        'student.studentInfo.mentorId': mongoose.Types.ObjectId(mentorId)
+        'student.studentInfo.mentorId': new mongoose.Types.ObjectId(mentorId)
       }
     }
   ]);

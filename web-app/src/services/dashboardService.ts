@@ -83,6 +83,13 @@ export interface HODDashboardData {
     value: number;
     color: string;
   }>;
+  semesterDistribution: Array<{
+    semester: number;
+    total: number;
+    regular: number;
+    lateral: number;
+    academicYear: string;
+  }>;
   mentorPerformance: Array<{
     mentor: string;
     students: number;
@@ -210,6 +217,33 @@ class DashboardService {
     const analyticsResponse = await apiService.get(`/analytics/department/${user.department}`);
     const analytics = analyticsResponse.data;
     
+    // Process semester distribution with academic year calculation
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+    
+    const semesterDistribution = analytics.semesterDistribution?.map((sem: any) => {
+      const isOddSem = sem._id % 2 === 1;
+      let academicYear;
+      
+      if (isOddSem) {
+        // Odd semester: Aug-Jan
+        const startYear = currentMonth >= 8 ? currentYear : currentYear - 1;
+        academicYear = `${startYear}-${(startYear + 1).toString().slice(-2)}`;
+      } else {
+        // Even semester: Jan-July
+        const startYear = currentMonth >= 8 ? currentYear - 1 : currentYear - 1;
+        academicYear = `${startYear}-${(startYear + 1).toString().slice(-2)}`;
+      }
+      
+      return {
+        semester: sem._id,
+        total: sem.count,
+        regular: sem.regularCount,
+        lateral: sem.lateralCount,
+        academicYear
+      };
+    }) || [];
+
     return {
       departmentStats: {
         totalStudents: analytics.overview.totalStudents,
@@ -227,6 +261,7 @@ class DashboardService {
         { name: 'Medium Risk', value: Math.floor(analytics.overview.atRiskCount * 0.6), color: 'hsl(var(--warning))' },
         { name: 'High Risk', value: Math.floor(analytics.overview.atRiskCount * 0.4), color: 'hsl(var(--destructive))' }
       ],
+      semesterDistribution,
       mentorPerformance: analytics.mentorPerformance || [
         { mentor: 'Dr. Smith', students: 25, atRisk: 2, avgCGPA: 8.7 },
         { mentor: 'Prof. Johnson', students: 28, atRisk: 4, avgCGPA: 8.2 },

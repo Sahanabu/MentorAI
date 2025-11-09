@@ -46,7 +46,7 @@ class MentorAssignmentController {
   async autoDistribute(req, res, next) {
     try {
       const { department } = req.user;
-      const { semester, maxStudentsPerMentor = 20 } = req.body;
+      const { semester } = req.body;
       
       // Get students to assign
       const students = await User.find({
@@ -72,9 +72,8 @@ class MentorAssignmentController {
         });
       }
       
-      // Calculate distribution
+      // Calculate dynamic distribution: total students / total mentors
       const studentsPerMentor = Math.ceil(students.length / mentors.length);
-      const actualLimit = Math.min(studentsPerMentor, maxStudentsPerMentor);
       
       // Clear existing assignments for this department
       await MentorAssignment.deleteMany({ department });
@@ -95,10 +94,7 @@ class MentorAssignmentController {
         const remainingMentors = mentors.length - i;
         
         // Calculate how many students this mentor should get
-        const studentsForThisMentor = Math.min(
-          actualLimit,
-          Math.ceil(remainingStudents / remainingMentors)
-        );
+        const studentsForThisMentor = Math.ceil(remainingStudents / remainingMentors);
         
         const assignedStudents = students.slice(studentIndex, studentIndex + studentsForThisMentor);
         
@@ -108,7 +104,7 @@ class MentorAssignmentController {
             mentorId: mentor._id,
             department,
             assignedStudents: assignedStudents.map(s => s._id),
-            maxStudentCount: actualLimit,
+            maxStudentCount: studentsPerMentor,
             regularStudents: assignedStudents.filter(s => s.studentInfo?.entryType === 'REGULAR').map(s => s._id),
             lateralStudents: assignedStudents.filter(s => s.studentInfo?.entryType === 'LATERAL').map(s => s._id)
           });
@@ -128,12 +124,13 @@ class MentorAssignmentController {
       
       res.json({
         success: true,
-        message: `Successfully assigned ${studentIndex} students to ${assignments.length} mentors`,
+        message: `Successfully assigned ${studentIndex} students to ${assignments.length} mentors (${studentsPerMentor} students per mentor)`,
         data: { 
           assignments: assignments.length, 
           studentsAssigned: studentIndex,
           totalStudents: students.length,
-          totalMentors: mentors.length
+          totalMentors: mentors.length,
+          studentsPerMentor
         }
       });
     } catch (error) {

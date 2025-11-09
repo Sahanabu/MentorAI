@@ -9,12 +9,14 @@ import { Users, AlertTriangle, TrendingUp, Award, BookOpen, Brain, UserPlus } fr
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { dashboardService, HODDashboardData } from "@/services/dashboardService";
 import StudentRegistration from "@/components/hod/StudentRegistration";
+import ManageStudents from "@/components/hod/ManageStudents";
 
 const HodDashboard = () => {
   const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState<HODDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [showManageStudents, setShowManageStudents] = useState(false);
 
   useEffect(() => {
     const role = sessionStorage.getItem("userRole");
@@ -73,13 +75,23 @@ const HodDashboard = () => {
             <h1 className="text-3xl font-bold text-foreground mb-2">Department Overview</h1>
             <p className="text-muted-foreground">Computer Science & Engineering Department Analytics</p>
           </div>
-          <Button 
-            onClick={() => setShowRegistration(!showRegistration)}
-            className="flex items-center gap-2"
-          >
-            <UserPlus className="h-4 w-4" />
-            {showRegistration ? 'Hide Registration' : 'Register Students'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setShowRegistration(!showRegistration)}
+              className="flex items-center gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              {showRegistration ? 'Hide Registration' : 'Register Students'}
+            </Button>
+            <Button 
+              onClick={() => setShowManageStudents(!showManageStudents)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              {showManageStudents ? 'Hide Management' : 'Manage Students'}
+            </Button>
+          </div>
         </div>
 
         {/* Student Registration Section */}
@@ -87,6 +99,15 @@ const HodDashboard = () => {
           <Card>
             <CardContent className="pt-6">
               <StudentRegistration />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Student Management Section */}
+        {showManageStudents && (
+          <Card>
+            <CardContent className="pt-6">
+              <ManageStudents />
             </CardContent>
           </Card>
         )}
@@ -189,6 +210,45 @@ const HodDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Semester Distribution */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              Semester-wise Student Distribution
+            </CardTitle>
+            <CardDescription>Current academic year student enrollment by semester</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Semester</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Academic Year</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Total Students</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Regular Entry</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Lateral Entry</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dashboardData.semesterDistribution.map((sem, index) => (
+                    <tr key={index} className="border-b hover:bg-muted/50 transition-colors">
+                      <td className="py-3 px-4 font-medium text-foreground">
+                        {sem.semester}{sem.semester % 2 === 1 ? 'st' : 'nd'} Semester
+                      </td>
+                      <td className="py-3 px-4 text-muted-foreground">{sem.academicYear}</td>
+                      <td className="py-3 px-4 font-medium text-foreground">{sem.total}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{sem.regular}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{sem.lateral}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Subject Analytics */}
         <Card>
