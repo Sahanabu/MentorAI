@@ -3,15 +3,52 @@ import { apiService } from './api';
 
 class AuthService {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
-    return apiService.post<AuthResponse>('/auth/login', credentials);
+    const response = await apiService.post<AuthResponse>('/auth/login', credentials);
+    
+    if (response.success && response.data) {
+      // Store tokens
+      apiService.setAuthTokens(
+        response.data.tokens.accessToken,
+        response.data.tokens.refreshToken
+      );
+      
+      // Store user data
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('userRole', response.data.user.role.toLowerCase());
+    }
+    
+    return response;
   }
 
   async register(userData: RegisterRequest): Promise<AuthResponse> {
-    return apiService.post<AuthResponse>('/auth/register', userData);
+    const response = await apiService.post<AuthResponse>('/auth/register', userData);
+    
+    if (response.success && response.data) {
+      // Store tokens
+      apiService.setAuthTokens(
+        response.data.tokens.accessToken,
+        response.data.tokens.refreshToken
+      );
+      
+      // Store user data
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('userRole', response.data.user.role.toLowerCase());
+    }
+    
+    return response;
   }
 
   async logout(): Promise<void> {
-    await apiService.post('/auth/logout');
+    try {
+      await apiService.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
+      // Clear local storage
+      apiService.clearAuthTokens();
+      localStorage.removeItem('user');
+      localStorage.removeItem('userRole');
+    }
   }
 
   async refreshToken(refreshToken: string) {
@@ -32,6 +69,26 @@ class AuthService {
       newPassword,
       confirmPassword: newPassword,
     });
+  }
+
+  getCurrentUser(): User | null {
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
+  }
+
+  isAuthenticated(): boolean {
+    const token = localStorage.getItem('accessToken');
+    const user = this.getCurrentUser();
+    return !!(token && user);
+  }
+
+  getUserRole(): string | null {
+    return localStorage.getItem('userRole');
+  }
+
+  hasRole(role: string): boolean {
+    const userRole = this.getUserRole();
+    return userRole === role.toLowerCase();
   }
 }
 

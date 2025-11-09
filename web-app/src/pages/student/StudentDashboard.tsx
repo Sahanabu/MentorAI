@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -7,94 +7,89 @@ import RiskBadge from "@/components/layout/RiskBadge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/layout/ui/card";
 import { Progress } from "@/components/layout/ui/progress";
 import { Brain, BookOpen, Calendar, Award, TrendingUp, AlertCircle } from "lucide-react";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { dashboardService, StudentDashboardData } from "@/services/dashboardService";
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState<StudentDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const role = localStorage.getItem("userRole");
     if (role !== "student") {
       navigate("/login");
-    } else {
-      toast.success("Welcome back, Student!");
+      return;
     }
+
+    const loadDashboardData = async () => {
+      try {
+        const data = await dashboardService.getStudentDashboard();
+        setDashboardData(data);
+        toast.success(`Welcome back, ${data.profile.name}!`);
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+        toast.error('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
   }, [navigate]);
 
-  // Mock data
-  const performanceData = [
-    { month: "Jan", cgpa: 7.2 },
-    { month: "Feb", cgpa: 7.5 },
-    { month: "Mar", cgpa: 7.8 },
-    { month: "Apr", cgpa: 8.0 },
-    { month: "May", cgpa: 8.2 },
-  ];
+  if (loading) {
+    return (
+      <DashboardLayout role="student">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading dashboard...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
-  const subjectPerformance = [
-    { subject: "Data Structures", marks: 85, total: 100 },
-    { subject: "Algorithms", marks: 78, total: 100 },
-    { subject: "Database Systems", marks: 92, total: 100 },
-    { subject: "Web Development", marks: 88, total: 100 },
-    { subject: "AI/ML", marks: 75, total: 100 },
-  ];
-
-  const attendanceData = [
-    { name: "Present", value: 85, color: "hsl(var(--success))" },
-    { name: "Absent", value: 15, color: "hsl(var(--destructive))" },
-  ];
-
-  const aiInsights = [
-    {
-      type: "success" as const,
-      title: "Strong Performance Trend",
-      description: "Your CGPA has improved by 1.0 points over the last semester. Keep up the excellent work!",
-      confidence: 92,
-    },
-    {
-      type: "warning" as const,
-      title: "Attention Required: AI/ML",
-      description: "Your performance in AI/ML is below average. Consider attending extra help sessions.",
-      confidence: 87,
-    },
-    {
-      type: "info" as const,
-      title: "Attendance Milestone",
-      description: "You're on track to maintain 85%+ attendance this semester.",
-      confidence: 95,
-    },
-  ];
+  if (!dashboardData) {
+    return (
+      <DashboardLayout role="student">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Failed to load dashboard data</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="student">
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome Back, Student!</h1>
-          <p className="text-muted-foreground">Here's your academic performance overview</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome Back, {dashboardData.profile.name}!</h1>
+          <p className="text-muted-foreground">{dashboardData.profile.usn} • Semester {dashboardData.profile.semester} • {dashboardData.profile.department}</p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Current CGPA"
-            value="8.2"
+            value={dashboardData.profile.cgpa.toFixed(1)}
             icon={Award}
-            trend={{ value: 12, isPositive: true }}
           />
           <StatCard
             title="Attendance"
-            value="85%"
+            value={`${Math.round(dashboardData.currentSemester.attendance)}%`}
             icon={Calendar}
-            trend={{ value: 3, isPositive: true }}
           />
           <StatCard
             title="Subjects"
-            value="5"
+            value={dashboardData.currentSemester.subjects.toString()}
             icon={BookOpen}
           />
           <StatCard
             title="Backlogs"
-            value="0"
+            value={dashboardData.currentSemester.backlogs.toString()}
             icon={AlertCircle}
           />
         </div>
@@ -110,12 +105,12 @@ const StudentDashboard = () => {
                 </CardTitle>
                 <CardDescription>AI-powered analysis of your academic standing</CardDescription>
               </div>
-              <RiskBadge level="low" />
+              <RiskBadge level={dashboardData.riskAssessment.level.toLowerCase() as 'low' | 'medium' | 'high'} />
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Based on your current performance metrics, attendance, and trend analysis, you are maintaining excellent academic standing. Continue your current study patterns.
+              Risk factors: {dashboardData.riskAssessment.factors.join(', ')}. Confidence: {Math.round(dashboardData.riskAssessment.confidence)}%
             </p>
           </CardContent>
         </Card>
@@ -133,7 +128,7 @@ const StudentDashboard = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={performanceData}>
+                <LineChart data={dashboardData.performanceData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
                   <YAxis domain={[6, 10]} stroke="hsl(var(--muted-foreground))" />
@@ -167,7 +162,7 @@ const StudentDashboard = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={subjectPerformance}>
+                <BarChart data={dashboardData.subjectPerformance}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="subject" 
@@ -202,7 +197,7 @@ const StudentDashboard = () => {
             <CardDescription>Personalized recommendations based on your data</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {aiInsights.map((insight, index) => (
+            {dashboardData.aiInsights.map((insight, index) => (
               <div key={index} className="p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
                 <div className="flex items-start gap-3">
                   <div className={`p-2 rounded-lg ${

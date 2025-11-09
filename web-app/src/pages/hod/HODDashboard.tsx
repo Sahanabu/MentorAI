@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -6,48 +6,60 @@ import StatCard from "@/components/layout/StatCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/layout/ui/card";
 import { Users, AlertTriangle, TrendingUp, Award, BookOpen, Brain } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import { dashboardService, HODDashboardData } from "@/services/dashboardService";
 
 const HodDashboard = () => {
   const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState<HODDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const role = localStorage.getItem("userRole");
     if (role !== "hod") {
       navigate("/login");
-    } else {
-      toast.success("Welcome back, HOD!");
+      return;
     }
+
+    const loadDashboardData = async () => {
+      try {
+        const data = await dashboardService.getHODDashboard();
+        setDashboardData(data);
+        toast.success("Welcome back, HOD!");
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+        toast.error('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
   }, [navigate]);
 
-  // Mock data
-  const departmentPerformance = [
-    { semester: "Sem 1", avgCGPA: 7.2, students: 120 },
-    { semester: "Sem 2", avgCGPA: 7.5, students: 118 },
-    { semester: "Sem 3", avgCGPA: 7.8, students: 115 },
-    { semester: "Sem 4", avgCGPA: 8.0, students: 112 },
-    { semester: "Sem 5", avgCGPA: 8.2, students: 110 },
-  ];
+  if (loading) {
+    return (
+      <DashboardLayout role="hod">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading dashboard...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
-  const riskDistribution = [
-    { name: "Low Risk", value: 65, color: "hsl(var(--success))" },
-    { name: "Medium Risk", value: 25, color: "hsl(var(--warning))" },
-    { name: "High Risk", value: 10, color: "hsl(var(--destructive))" },
-  ];
+  if (!dashboardData) {
+    return (
+      <DashboardLayout role="hod">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Failed to load dashboard data</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
-  const mentorPerformance = [
-    { mentor: "Dr. Smith", students: 25, atRisk: 2, avgCGPA: 8.5 },
-    { mentor: "Prof. Johnson", students: 28, atRisk: 4, avgCGPA: 8.2 },
-    { mentor: "Dr. Williams", students: 22, atRisk: 1, avgCGPA: 8.7 },
-    { mentor: "Prof. Brown", students: 30, atRisk: 5, avgCGPA: 8.0 },
-  ];
 
-  const subjectAnalytics = [
-    { subject: "Data Structures", avgMarks: 78, passRate: 92 },
-    { subject: "Algorithms", avgMarks: 75, passRate: 88 },
-    { subject: "Database Systems", avgMarks: 82, passRate: 95 },
-    { subject: "Web Development", avgMarks: 85, passRate: 97 },
-    { subject: "AI/ML", avgMarks: 72, passRate: 85 },
-  ];
 
   return (
     <DashboardLayout role="hod">
@@ -62,27 +74,23 @@ const HodDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Students"
-            value="450"
+            value={dashboardData.departmentStats.totalStudents.toString()}
             icon={Users}
-            trend={{ value: 5, isPositive: true }}
           />
           <StatCard
             title="At-Risk Students"
-            value="45"
+            value={dashboardData.departmentStats.atRiskStudents.toString()}
             icon={AlertTriangle}
-            trend={{ value: 12, isPositive: false }}
           />
           <StatCard
             title="Avg Department CGPA"
-            value="8.2"
+            value={dashboardData.departmentStats.avgCGPA.toFixed(1)}
             icon={Award}
-            trend={{ value: 8, isPositive: true }}
           />
           <StatCard
             title="Avg Attendance"
-            value="87%"
+            value={`${Math.round(dashboardData.departmentStats.avgAttendance)}%`}
             icon={TrendingUp}
-            trend={{ value: 3, isPositive: true }}
           />
         </div>
 
@@ -99,7 +107,7 @@ const HodDashboard = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={departmentPerformance}>
+                <LineChart data={dashboardData.performanceTrends}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="semester" stroke="hsl(var(--muted-foreground))" />
                   <YAxis domain={[6, 9]} stroke="hsl(var(--muted-foreground))" />
@@ -135,7 +143,7 @@ const HodDashboard = () => {
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
-                    data={riskDistribution}
+                    data={dashboardData.riskDistribution}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -144,7 +152,7 @@ const HodDashboard = () => {
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {riskDistribution.map((entry, index) => (
+                    {dashboardData.riskDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -172,7 +180,7 @@ const HodDashboard = () => {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={subjectAnalytics}>
+              <BarChart data={dashboardData.subjectAnalytics}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis 
                   dataKey="subject" 
@@ -220,7 +228,7 @@ const HodDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {mentorPerformance.map((mentor, index) => (
+                  {dashboardData.mentorPerformance.map((mentor, index) => (
                     <tr key={index} className="border-b hover:bg-muted/50 transition-colors">
                       <td className="py-3 px-4 font-medium text-foreground">{mentor.mentor}</td>
                       <td className="py-3 px-4 text-muted-foreground">{mentor.students}</td>

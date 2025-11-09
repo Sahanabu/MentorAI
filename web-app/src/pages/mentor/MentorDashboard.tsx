@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -9,68 +9,60 @@ import { Button } from "@/components/layout/ui/button";
 import { Badge } from "@/components/layout/ui/badge";
 import { Users, AlertTriangle, TrendingUp, Calendar, MessageSquare, Award, Brain } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { dashboardService, MentorDashboardData } from "@/services/dashboardService";
 
 const MentorDashboard = () => {
   const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState<MentorDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const role = localStorage.getItem("userRole");
     if (role !== "mentor") {
       navigate("/login");
-    } else {
-      toast.success("Welcome back, Mentor!");
+      return;
     }
+
+    const loadDashboardData = async () => {
+      try {
+        const data = await dashboardService.getMentorDashboard();
+        setDashboardData(data);
+        toast.success("Welcome back, Mentor!");
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+        toast.error('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
   }, [navigate]);
 
-  // Mock data
-  const mentorStats = {
-    totalStudents: 45,
-    atRiskStudents: 3,
-    interventions: 12,
-    averageCGPA: 8.1,
-    attendanceRate: 85,
-    improvementRate: 78
-  };
+  if (loading) {
+    return (
+      <DashboardLayout role="mentor">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading dashboard...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
-  const studentPerformanceData = [
-    { month: "Jan", avgCGPA: 7.8, attendance: 82 },
-    { month: "Feb", avgCGPA: 8.0, attendance: 84 },
-    { month: "Mar", avgCGPA: 8.1, attendance: 85 },
-    { month: "Apr", avgCGPA: 8.2, attendance: 87 },
-  ];
+  if (!dashboardData) {
+    return (
+      <DashboardLayout role="mentor">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Failed to load dashboard data</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
-  const riskDistribution = [
-    { name: "Low Risk", value: 32, color: "hsl(var(--success))" },
-    { name: "Medium Risk", value: 10, color: "hsl(var(--warning))" },
-    { name: "High Risk", value: 3, color: "hsl(var(--destructive))" },
-  ];
 
-  const atRiskStudents = [
-    {
-      usn: '2KA21CS015',
-      name: 'John Doe',
-      cgpa: 6.2,
-      attendance: 65,
-      riskLevel: 'high' as const,
-      lastIntervention: '2 days ago'
-    },
-    {
-      usn: '2KA21CS032',
-      name: 'Jane Smith',
-      cgpa: 7.1,
-      attendance: 72,
-      riskLevel: 'medium' as const,
-      lastIntervention: '1 week ago'
-    },
-    {
-      usn: '2KA21CS048',
-      name: 'Mike Johnson',
-      cgpa: 5.8,
-      attendance: 58,
-      riskLevel: 'high' as const,
-      lastIntervention: '3 days ago'
-    },
-  ];
 
   const recentInterventions = [
     {
@@ -130,27 +122,23 @@ const MentorDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Total Students"
-            value={mentorStats.totalStudents.toString()}
+            value={dashboardData.stats.totalStudents.toString()}
             icon={Users}
-            trend={{ value: 2, isPositive: true }}
           />
           <StatCard
             title="At-Risk Students"
-            value={mentorStats.atRiskStudents.toString()}
+            value={dashboardData.stats.atRiskStudents.toString()}
             icon={AlertTriangle}
-            trend={{ value: 8, isPositive: false }}
           />
           <StatCard
             title="Interventions"
-            value={mentorStats.interventions.toString()}
+            value={dashboardData.stats.interventions.toString()}
             icon={MessageSquare}
-            trend={{ value: 15, isPositive: true }}
           />
           <StatCard
             title="Avg CGPA"
-            value={mentorStats.averageCGPA.toString()}
+            value={dashboardData.stats.averageCGPA.toFixed(1)}
             icon={Award}
-            trend={{ value: 5, isPositive: true }}
           />
         </div>
 
@@ -158,15 +146,13 @@ const MentorDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2">
           <StatCard
             title="Attendance Rate"
-            value={`${mentorStats.attendanceRate}%`}
+            value={`${Math.round(dashboardData.stats.attendanceRate)}%`}
             icon={Calendar}
-            trend={{ value: 3, isPositive: true }}
           />
           <StatCard
             title="Improvement Rate"
-            value={`${mentorStats.improvementRate}%`}
+            value={`${Math.round(dashboardData.stats.improvementRate)}%`}
             icon={TrendingUp}
-            trend={{ value: 12, isPositive: true }}
           />
         </div>
 
@@ -183,7 +169,7 @@ const MentorDashboard = () => {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={studentPerformanceData}>
+                <BarChart data={dashboardData.performanceData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
                   <YAxis stroke="hsl(var(--muted-foreground))" />
@@ -214,7 +200,7 @@ const MentorDashboard = () => {
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
-                    data={riskDistribution}
+                    data={dashboardData.riskDistribution}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -223,7 +209,7 @@ const MentorDashboard = () => {
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {riskDistribution.map((entry, index) => (
+                    {dashboardData.riskDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -255,7 +241,7 @@ const MentorDashboard = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {atRiskStudents.map((student, index) => (
+            {dashboardData.atRiskStudents.map((student, index) => (
               <div key={index} className="p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
