@@ -89,7 +89,11 @@ const StudentRegistration: React.FC = () => {
 
       if (response.status === 401) {
         console.error('Unauthorized - please login again');
-        // Redirect to login or show error
+        return;
+      }
+      
+      if (response.status === 403) {
+        console.error('Forbidden - insufficient permissions');
         return;
       }
 

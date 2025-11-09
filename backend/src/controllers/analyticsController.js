@@ -12,14 +12,14 @@ class AnalyticsController {
 
       // Get total students
       const totalStudents = await User.countDocuments({
-        role: 'STUDENT',
+        role: 'student',
         department: department.toUpperCase(),
         isActive: true
       });
 
       // Get active mentors
       const activeMentors = await User.countDocuments({
-        role: 'MENTOR',
+        role: 'mentor',
         department: department.toUpperCase(),
         isActive: true
       });
@@ -122,7 +122,7 @@ class AnalyticsController {
 
       // Get mentor's students
       const students = await User.find({
-        role: 'STUDENT',
+        role: 'student',
         'studentInfo.mentorId': mentorId,
         isActive: true
       });

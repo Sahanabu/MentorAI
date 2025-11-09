@@ -12,10 +12,12 @@ const authorize = (roles) => {
       });
     }
 
+    console.log('User role:', req.user.role, 'Required roles:', roles);
+    
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: 'Insufficient permissions'
+        message: `Insufficient permissions. User role: ${req.user.role}, Required: ${roles.join(', ')}`
       });
     }
 
@@ -59,9 +61,9 @@ const upload = multer({
 });
 
 // Routes
-router.post('/upload', authenticate, authorize(['hod']), upload.single('studentsFile'), uploadStudents);
+router.post('/upload', authenticate, authorize(['HOD']), upload.single('studentsFile'), uploadStudents);
 router.get('/template', getTemplate);
-router.get('/department/:department', authenticate, authorize(['hod', 'mentor']), getStudentsByDepartment);
-router.put('/deactivate', authenticate, authorize(['hod']), deactivateStudents);
+router.get('/department/:department', authenticate, authorize(['HOD', 'MENTOR']), getStudentsByDepartment);
+router.put('/deactivate', authenticate, authorize(['HOD']), deactivateStudents);
 
 module.exports = router;

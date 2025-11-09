@@ -52,9 +52,7 @@ const uploadStudents = async (req, res) => {
         const department = USN.substring(5, 7).toUpperCase();
 
         // Check if student already exists
-        const existingStudent = await User.findOne({ 
-          $or: [{ usn: USN }, { email: email }] 
-        });
+        const existingStudent = await User.findOne({ usn: USN });
 
         if (existingStudent) {
           results.duplicates.push({
@@ -64,18 +62,36 @@ const uploadStudents = async (req, res) => {
           continue;
         }
 
-        // Extract admission year from USN (2KA21CS001 -> 2021)
-        const usnYear = parseInt('20' + USN.substring(3, 5));
+        // Extract academic year and student number from USN (2KA23CS001 -> 2023, 001)
+        const academicYear = parseInt('20' + USN.substring(3, 5));
+        const studentNumber = parseInt(USN.substring(7, 10));
         const currentYear = new Date().getFullYear();
         const currentMonth = new Date().getMonth() + 1;
         
-        // Calculate current semester based on USN year
+        // Determine entry type based on student number
+        const isLateralEntry = studentNumber >= 400 && studentNumber <= 500;
+        const entryType = isLateralEntry ? 'Lateral' : 'CET';
+        
+        // Calculate current semester
         let calculatedSemester = 1;
-        if (currentMonth >= 6) { // After June, odd semesters
-          calculatedSemester = ((currentYear - usnYear) * 2) + 1;
-        } else { // Before June, even semesters
-          calculatedSemester = (currentYear - usnYear) * 2;
+        const yearsDiff = currentYear - academicYear;
+        
+        if (isLateralEntry) {
+          // Lateral entry students start from 3rd semester
+          if (currentMonth >= 6) { // After June, odd semesters
+            calculatedSemester = 3 + (yearsDiff * 2) + 1;
+          } else { // Before June, even semesters
+            calculatedSemester = 3 + (yearsDiff * 2);
+          }
+        } else {
+          // Regular students start from 1st semester
+          if (currentMonth >= 6) { // After June, odd semesters
+            calculatedSemester = (yearsDiff * 2) + 1;
+          } else { // Before June, even semesters
+            calculatedSemester = yearsDiff * 2;
+          }
         }
+        
         calculatedSemester = Math.max(1, Math.min(8, calculatedSemester));
 
         // Create student with USN as default password
@@ -92,8 +108,8 @@ const uploadStudents = async (req, res) => {
           },
           department: department,
           studentInfo: {
-            admissionYear: usnYear,
-            entryType: 'CET',
+            admissionYear: academicYear,
+            entryType: entryType,
             currentSemester: calculatedSemester
           },
           isActive: true,
