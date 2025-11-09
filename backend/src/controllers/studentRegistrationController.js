@@ -51,6 +51,20 @@ const uploadStudents = async (req, res) => {
           continue;
         }
 
+        // Extract admission year from USN (2KA21CS001 -> 2021)
+        const usnYear = parseInt('20' + USN.substring(3, 5));
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+        
+        // Calculate current semester based on USN year
+        let calculatedSemester = 1;
+        if (currentMonth >= 6) { // After June, odd semesters
+          calculatedSemester = ((currentYear - usnYear) * 2) + 1;
+        } else { // Before June, even semesters
+          calculatedSemester = (currentYear - usnYear) * 2;
+        }
+        calculatedSemester = Math.max(1, Math.min(8, calculatedSemester));
+
         // Create student with USN as default password
         const hashedPassword = await bcrypt.hash(USN, 10);
 
@@ -73,9 +87,9 @@ const uploadStudents = async (req, res) => {
           },
           department: department.toUpperCase(),
           studentInfo: {
-            admissionYear: admissionYear || new Date().getFullYear(),
+            admissionYear: usnYear,
             entryType: entryType || 'CET',
-            currentSemester: semester || 1,
+            currentSemester: semester || calculatedSemester,
             section: section || 'A'
           },
           isActive: true,

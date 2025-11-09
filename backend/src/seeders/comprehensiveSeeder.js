@@ -24,6 +24,7 @@ class ComprehensiveSeeder {
       await this.seedMentorAssignments(users.mentors, users.students);
       await this.seedAssessments(users.students, subjects);
       await this.seedBacklogs(users.students, subjects);
+      await this.seedAttendance(users.students, subjects, users.teachers);
       await this.seedPredictions(users.students, subjects);
       
       console.log('Database seeding completed successfully!');
@@ -36,6 +37,7 @@ class ComprehensiveSeeder {
 
   async clearDatabase() {
     console.log('Clearing existing data...');
+    const Attendance = require('../models/Attendance');
     await Promise.all([
       User.deleteMany({}),
       Scheme.deleteMany({}),
@@ -43,7 +45,8 @@ class ComprehensiveSeeder {
       Assessment.deleteMany({}),
       Backlog.deleteMany({}),
       MentorAssignment.deleteMany({}),
-      Prediction.deleteMany({})
+      Prediction.deleteMany({}),
+      Attendance.deleteMany({})
     ]);
   }
 
@@ -130,6 +133,18 @@ class ComprehensiveSeeder {
       const department = i <= 50 ? 'CS' : 'EC';
       const entryType = i % 10 === 0 ? ENTRY_TYPES.LATERAL : ENTRY_TYPES.REGULAR;
       const admissionYear = 2021;
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth() + 1;
+      
+      // Calculate current semester based on admission year
+      let currentSemester = 1;
+      if (currentMonth >= 6) {
+        currentSemester = ((currentYear - admissionYear) * 2) + 1;
+      } else {
+        currentSemester = (currentYear - admissionYear) * 2;
+      }
+      currentSemester = Math.max(1, Math.min(8, currentSemester));
+      
       const deptNumber = i <= 50 ? i : i - 50;
       const usn = `2KA${admissionYear.toString().slice(-2)}${department}${deptNumber.toString().padStart(3, '0')}`;
       
@@ -147,7 +162,7 @@ class ComprehensiveSeeder {
         studentInfo: {
           admissionYear,
           entryType,
-          currentSemester: Math.floor(Math.random() * 3) + 5, // Semesters 5-7
+          currentSemester,
           cgpa: Math.round((Math.random() * 4 + 6) * 100) / 100 // CGPA 6.0-10.0
         }
       });
@@ -419,6 +434,50 @@ class ComprehensiveSeeder {
     }
     
     return await Prediction.insertMany(predictions);
+  }
+
+  async seedAttendance(students, subjects, teachers) {
+    console.log('Seeding attendance records...');
+    const Attendance = require('../models/Attendance');
+    
+    const attendanceRecords = [];
+    const daysBack = 30; // Last 30 days
+    
+    for (const student of students) {
+      const studentSubjects = subjects.filter(s => s.department === student.department);
+      
+      for (const subject of studentSubjects) {
+        const teacher = teachers.find(t => t.department === student.department) || teachers[0];
+        
+        // Generate attendance for last 30 days
+        for (let day = 0; day < daysBack; day++) {
+          const date = new Date();
+          date.setDate(date.getDate() - day);
+          
+          // Skip weekends
+          if (date.getDay() === 0 || date.getDay() === 6) continue;
+          
+          // Random periods per day (1-3)
+          const periodsPerDay = Math.floor(Math.random() * 3) + 1;
+          
+          for (let period = 1; period <= periodsPerDay; period++) {
+            const isPresent = Math.random() > 0.2; // 80% attendance rate
+            
+            attendanceRecords.push({
+              studentId: student._id,
+              subjectId: subject._id,
+              teacherId: teacher._id,
+              date: new Date(date),
+              status: isPresent ? 'present' : 'absent',
+              period,
+              markedAt: new Date(date.getTime() + (period * 60 * 60 * 1000)) // Add hours for period
+            });
+          }
+        }
+      }
+    }
+    
+    return await Attendance.insertMany(attendanceRecords);
   }
 }
 
