@@ -35,11 +35,7 @@ const StudentRegistration: React.FC = () => {
 
   const downloadTemplate = async () => {
     try {
-      const response = await fetch('/api/auth/students/template', {
-        headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('token')}`
-        }
-      });
+      const response = await fetch('http://localhost:5000/api/auth/students/template');
 
       if (response.ok) {
         const blob = await response.blob();
@@ -51,6 +47,8 @@ const StudentRegistration: React.FC = () => {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+      } else {
+        console.error('Failed to download template:', response.status);
       }
     } catch (error) {
       console.error('Error downloading template:', error);
@@ -65,7 +63,7 @@ const StudentRegistration: React.FC = () => {
     formData.append('studentsFile', file);
 
     try {
-      const response = await fetch('/api/auth/students/upload', {
+      const response = await fetch('http://localhost:5000/api/auth/students/upload', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${sessionStorage.getItem('token')}`

@@ -60,7 +60,7 @@ const upload = multer({
 
 // Routes
 router.post('/upload', authenticate, authorize(['hod']), upload.single('studentsFile'), uploadStudents);
-router.get('/template', authenticate, authorize(['hod']), getTemplate);
+router.get('/template', getTemplate);
 router.get('/department/:department', authenticate, authorize(['hod', 'mentor']), getStudentsByDepartment);
 router.put('/deactivate', authenticate, authorize(['hod']), deactivateStudents);
 
