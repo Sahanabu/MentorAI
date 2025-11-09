@@ -58,7 +58,7 @@ const StudentRegistration: React.FC = () => {
   const uploadStudents = async () => {
     if (!file) return;
 
-    const token = sessionStorage.getItem('token');
+    const token = sessionStorage.getItem('accessToken');
     const userRole = sessionStorage.getItem('userRole');
     
     console.log('Token:', token ? 'Present' : 'Missing');
