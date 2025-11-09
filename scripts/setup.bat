@@ -1,62 +1,72 @@
 @echo off
-echo 🚀 Setting up MentorTrack AI System...
+echo 🚀 Setting up MentorTrack AI - Academic Mentoring ^& Performance Tracking Platform
+echo ==================================================================
 
 REM Check if Docker is installed
 docker --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ Docker is not installed. Please install Docker first.
+    echo ❌ Docker is not installed. Please install Docker Desktop first.
+    pause
     exit /b 1
 )
 
-REM Check if Docker Compose is installed
 docker-compose --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ Docker Compose is not installed. Please install Docker Compose first.
+    echo ❌ Docker Compose is not installed. Please install Docker Desktop first.
+    pause
     exit /b 1
+)
+
+REM Create .env file if it doesn't exist
+if not exist .env (
+    echo 📝 Creating .env file from template...
+    copy .env.example .env
+    echo ✅ .env file created. Please update it with your configuration.
 )
 
 REM Create necessary directories
-echo 📁 Creating directories...
+echo 📁 Creating necessary directories...
 if not exist logs mkdir logs
-if not exist ai-service\data\models mkdir ai-service\data\models
-if not exist ai-service\data\training mkdir ai-service\data\training
 if not exist uploads mkdir uploads
+if not exist nginx\ssl mkdir nginx\ssl
 
-REM Copy environment file
-if not exist .env (
-    echo 📝 Creating environment file...
-    copy .env.example .env
-    echo ⚠️  Please edit .env file with your configuration before running the application
-)
+REM Build and start services
+echo 🐳 Building and starting Docker containers...
+docker-compose down --remove-orphans
+docker-compose build --no-cache
+docker-compose up -d
 
-REM Install backend dependencies
-echo 📦 Installing backend dependencies...
-cd backend
-call npm install
-cd ..
+REM Wait for services to be ready
+echo ⏳ Waiting for services to start...
+timeout /t 30 /nobreak >nul
 
-REM Install web app dependencies
-echo 🌐 Installing web app dependencies...
-cd web-app
-call npm install
-cd ..
+REM Seed the database
+echo 🌱 Seeding database with sample data...
+docker-compose exec -T backend npm run seed
 
-REM Build Docker images
-echo 🐳 Building Docker images...
-docker-compose build
-
-echo ✅ Setup completed successfully!
+REM Display service status
 echo.
-echo Next steps:
-echo 1. Edit .env file with your configuration
-echo 2. Run 'docker-compose up -d' to start the application
-echo 3. Access the web app at http://localhost:3000
-echo 4. Access the API at http://localhost:5000
-echo 5. Access the AI service at http://localhost:8000
+echo 🎉 MentorTrack AI setup completed successfully!
+echo ==================================================================
+echo 📊 Service URLs:
+echo    • Web Application: http://localhost:3000
+echo    • Backend API: http://localhost:5000
+echo    • AI Service: http://localhost:8000
+echo    • MongoDB: mongodb://localhost:27017
+echo    • Redis: redis://localhost:6379
 echo.
-echo For development:
-echo - Backend: cd backend ^&^& npm run dev
-echo - AI Service: cd ai-service ^&^& python src/main.py
-echo - Web App: cd web-app ^&^& npm run dev
-
+echo 👥 Default Login Credentials:
+echo    • HOD (CS): hod.cs@college.edu / password123
+echo    • Mentor: mentor1@college.edu / password123
+echo    • Teacher: teacher1@college.edu / password123
+echo    • Student: student1@college.edu / password123
+echo.
+echo 🔧 Useful Commands:
+echo    • View logs: docker-compose logs -f [service-name]
+echo    • Stop services: docker-compose down
+echo    • Restart services: docker-compose restart
+echo    • Seed database: docker-compose exec backend npm run seed
+echo.
+echo 📚 Documentation: Check the docs/ folder for detailed guides
+echo ==================================================================
 pause

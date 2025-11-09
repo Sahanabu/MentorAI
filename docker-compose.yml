@@ -11,10 +11,10 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password123
-      MONGO_INITDB_DATABASE: mentortrack_ai
+      MONGO_INITDB_DATABASE: mentortrack
     volumes:
       - mongodb_data:/data/db
-      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
       - mentortrack-network
 
@@ -30,7 +30,7 @@ services:
     networks:
       - mentortrack-network
 
-  # Backend API Service
+  # Backend API
   backend:
     build:
       context: ./backend
@@ -41,16 +41,18 @@ services:
       - "5000:5000"
     environment:
       NODE_ENV: development
-      MONGODB_URI: mongodb://admin:password123@mongodb:27017/mentortrack_ai?authSource=admin
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/mentortrack?authSource=admin
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: dev-jwt-secret-key
+      JWT_SECRET: your-super-secret-jwt-key-here
+      JWT_EXPIRES_IN: 7d
+      CORS_ORIGIN: http://localhost:3000,http://localhost:5173
       AI_SERVICE_URL: http://ai-service:8000
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     depends_on:
       - mongodb
       - redis
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     networks:
       - mentortrack-network
 
@@ -59,16 +61,16 @@ services:
     build:
       context: ./ai-service
       dockerfile: Dockerfile
-    container_name: mentortrack-ai-service
+    container_name: mentortrack-ai
     restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
       PYTHONPATH: /app/src
-      MODEL_PATH: /app/data/models
+      MODEL_PATH: /app/models
     volumes:
       - ./ai-service:/app
-      - ai_models:/app/data/models
+      - ai_models:/app/models
     networks:
       - mentortrack-network
 
@@ -77,18 +79,18 @@ services:
     build:
       context: ./web-app
       dockerfile: Dockerfile
-    container_name: mentortrack-web-app
+    container_name: mentortrack-webapp
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      REACT_APP_API_URL: http://localhost:5000
+      REACT_APP_API_URL: http://localhost:5000/api
       REACT_APP_AI_SERVICE_URL: http://localhost:8000
+    depends_on:
+      - backend
     volumes:
       - ./web-app:/app
       - /app/node_modules
-    depends_on:
-      - backend
     networks:
       - mentortrack-network
 
@@ -102,11 +104,11 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
-      - backend
       - web-app
+      - backend
+      - ai-service
     networks:
       - mentortrack-network
 
