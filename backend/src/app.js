@@ -13,6 +13,8 @@ const mentorRoutes = require('./routes/mentors');
 const backlogRoutes = require('./routes/backlogs');
 const analyticsRoutes = require('./routes/analytics');
 const predictionRoutes = require('./routes/predictions');
+const mentorAssignmentRoutes = require('./routes/mentorAssignments');
+const aiPredictionRoutes = require('./routes/aiPredictions');
 
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./middleware/logger');
@@ -76,6 +78,8 @@ app.use('/api/mentors', mentorRoutes);
 app.use('/api/backlogs', backlogRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/predictions', predictionRoutes);
+app.use('/api/mentor-assignments', mentorAssignmentRoutes);
+app.use('/api/ai-predictions', aiPredictionRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -10,11 +10,10 @@ class MentorAssignmentController {
     try {
       const { department } = req.user;
       
-      // Get unassigned students
+      // Get all students in department
       const students = await User.find({
         role: USER_ROLES.STUDENT,
-        department,
-        'studentInfo.mentorId': { $exists: false }
+        department
       }).select('usn profile studentInfo department');
       
       // Get available mentors
@@ -26,7 +25,7 @@ class MentorAssignmentController {
       // Get current assignments
       const assignments = await MentorAssignment.find({ department })
         .populate('mentorId', 'profile')
-        .populate('assignedStudents', 'usn profile');
+        .populate('assignedStudents', 'usn profile studentInfo');
       
       res.json({
         success: true,
@@ -53,8 +52,11 @@ class MentorAssignmentController {
       const students = await User.find({
         role: USER_ROLES.STUDENT,
         department,
-        ...(semester && { 'studentInfo.currentSemester': semester }),
-        'studentInfo.mentorId': { $exists: false }
+        ...(semester && { 'studentInfo.currentSemester': parseInt(semester) }),
+        $or: [
+          { 'studentInfo.mentorId': { $exists: false } },
+          { 'studentInfo.mentorId': null }
+        ]
       });
       
       // Get available mentors
@@ -77,12 +79,28 @@ class MentorAssignmentController {
       // Clear existing assignments for this department
       await MentorAssignment.deleteMany({ department });
       
+      // Clear mentor references from all students
+      await User.updateMany(
+        { role: USER_ROLES.STUDENT, department },
+        { $unset: { 'studentInfo.mentorId': 1 } }
+      );
+      
       // Distribute students
       const assignments = [];
       let studentIndex = 0;
       
-      for (const mentor of mentors) {
-        const assignedStudents = students.slice(studentIndex, studentIndex + actualLimit);
+      for (let i = 0; i < mentors.length && studentIndex < students.length; i++) {
+        const mentor = mentors[i];
+        const remainingStudents = students.length - studentIndex;
+        const remainingMentors = mentors.length - i;
+        
+        // Calculate how many students this mentor should get
+        const studentsForThisMentor = Math.min(
+          actualLimit,
+          Math.ceil(remainingStudents / remainingMentors)
+        );
+        
+        const assignedStudents = students.slice(studentIndex, studentIndex + studentsForThisMentor);
         
         if (assignedStudents.length > 0) {
           // Create assignment record
@@ -91,8 +109,8 @@ class MentorAssignmentController {
             department,
             assignedStudents: assignedStudents.map(s => s._id),
             maxStudentCount: actualLimit,
-            regularStudents: assignedStudents.filter(s => s.studentInfo.entryType === 'REGULAR').map(s => s._id),
-            lateralStudents: assignedStudents.filter(s => s.studentInfo.entryType === 'LATERAL').map(s => s._id)
+            regularStudents: assignedStudents.filter(s => s.studentInfo?.entryType === 'REGULAR').map(s => s._id),
+            lateralStudents: assignedStudents.filter(s => s.studentInfo?.entryType === 'LATERAL').map(s => s._id)
           });
           
           await assignment.save();
@@ -101,17 +119,22 @@ class MentorAssignmentController {
           // Update students with mentor reference
           await User.updateMany(
             { _id: { $in: assignedStudents.map(s => s._id) } },
-            { 'studentInfo.mentorId': mentor._id }
+            { $set: { 'studentInfo.mentorId': mentor._id } }
           );
           
-          studentIndex += actualLimit;
+          studentIndex += studentsForThisMentor;
         }
       }
       
       res.json({
         success: true,
         message: `Successfully assigned ${studentIndex} students to ${assignments.length} mentors`,
-        data: { assignments: assignments.length, studentsAssigned: studentIndex }
+        data: { 
+          assignments: assignments.length, 
+          studentsAssigned: studentIndex,
+          totalStudents: students.length,
+          totalMentors: mentors.length
+        }
       });
     } catch (error) {
       next(error);
