@@ -103,14 +103,22 @@ class AuthService {
    * Login user
    */
   async login(identifier, password) {
-    // Find user by email or USN
-    const user = await User.findOne({
-      $or: [
-        { email: identifier.toLowerCase() },
-        { usn: identifier.toUpperCase() }
-      ],
-      isActive: true
-    });
+    // For students, login with USN only. For others, use email
+    let user;
+    if (identifier.match(/^2KA\d{2}[A-Z]{2}\d{3}$/)) {
+      // USN format - student login
+      user = await User.findOne({
+        usn: identifier.toUpperCase(),
+        isActive: true
+      });
+    } else {
+      // Email format - staff login
+      user = await User.findOne({
+        email: identifier.toLowerCase(),
+        isActive: true
+      });
+    }
+    
     if (!user) {
       throw new Error('Invalid credentials');
     }

@@ -38,9 +38,8 @@ const registerValidation = [
 
 const loginValidation = [
   body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Please provide a valid email'),
+    .notEmpty()
+    .withMessage('Please provide USN or email'),
   body('password')
     .notEmpty()
     .withMessage('Password is required')

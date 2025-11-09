@@ -78,6 +78,24 @@ const StudentRegistration: React.FC = () => {
       if (data.success) {
         setResult(data.results);
         setDetails(data.details);
+      } else {
+        // Handle format validation errors
+        if (data.formatErrors) {
+          setDetails({
+            success: [],
+            errors: data.formatErrors.map((error, index) => ({
+              USN: `Format Error ${index + 1}`,
+              error: error
+            })),
+            duplicates: []
+          });
+          setResult({
+            total: 0,
+            successful: 0,
+            errors: data.formatErrors.length,
+            duplicates: 0
+          });
+        }
       }
     } catch (error) {
       console.error('Error uploading students:', error);
@@ -244,8 +262,8 @@ const StudentRegistration: React.FC = () => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          <strong>Important:</strong> Students will be able to login using their USN as both username and password. 
-          They can change their password after first login.
+          <strong>Excel Format:</strong> File must contain exactly 2 columns - USN and Name. 
+          USN format: 2KA21CS001. Students login using USN only.
         </AlertDescription>
       </Alert>
     </div>

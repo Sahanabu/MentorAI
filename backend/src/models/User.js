@@ -118,6 +118,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  profileCompleted: {
+    type: Boolean,
+    default: false
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

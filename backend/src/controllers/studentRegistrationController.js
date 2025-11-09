@@ -19,6 +19,16 @@ const uploadStudents = async (req, res) => {
     const worksheet = workbook.Sheets[sheetName];
     const students = XLSX.utils.sheet_to_json(worksheet);
 
+    // Validate Excel format
+    const formatErrors = validateExcelFormat(students);
+    if (formatErrors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Excel format validation failed',
+        formatErrors
+      });
+    }
+
     const results = {
       success: [],
       errors: [],
@@ -27,16 +37,19 @@ const uploadStudents = async (req, res) => {
 
     for (const studentData of students) {
       try {
-        const { USN, name, email, phone, department, semester, section, admissionYear, entryType, fatherName, motherName, address, dateOfBirth, gender, category, bloodGroup } = studentData;
+        const { USN, Name } = studentData;
 
         // Validate required fields
-        if (!USN || !name || !department) {
+        if (!USN || !Name) {
           results.errors.push({
             USN: USN || 'N/A',
-            error: 'Missing required fields (USN, name, department)'
+            error: 'Missing required fields (USN, Name)'
           });
           continue;
         }
+
+        // Extract department from USN (2KA21CS001 -> CS)
+        const department = USN.substring(5, 7).toUpperCase();
 
         // Check if student already exists
         const existingStudent = await User.findOne({ 
@@ -70,36 +83,28 @@ const uploadStudents = async (req, res) => {
 
         const newStudent = new User({
           usn: USN,
-          email: email || `${USN}@college.edu`,
+          email: `temp_${USN}@temp.edu`,
           password: hashedPassword,
           role: 'student',
           profile: {
-            firstName: name.split(' ')[0],
-            lastName: name.split(' ').slice(1).join(' ') || name.split(' ')[0],
-            phone: phone || '',
-            fatherName: fatherName || '',
-            motherName: motherName || '',
-            address: address || '',
-            dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-            gender: gender || '',
-            category: category || '',
-            bloodGroup: bloodGroup || ''
+            firstName: Name.split(' ')[0],
+            lastName: Name.split(' ').slice(1).join(' ') || Name.split(' ')[0]
           },
-          department: department.toUpperCase(),
+          department: department,
           studentInfo: {
             admissionYear: usnYear,
-            entryType: entryType || 'CET',
-            currentSemester: semester || calculatedSemester,
-            section: section || 'A'
+            entryType: 'CET',
+            currentSemester: calculatedSemester
           },
           isActive: true,
-          createdBy: req.user.userId
+          createdBy: req.user.userId,
+          profileCompleted: false
         });
 
         await newStudent.save();
         results.success.push({
           USN,
-          name,
+          name: Name,
           message: 'Student registered successfully'
         });
 
@@ -138,39 +143,15 @@ const getTemplate = (req, res) => {
     const templateData = [
       {
         USN: '2KA21CS001',
-        name: 'John Doe',
-        email: 'john.doe@college.edu',
-        phone: '9876543210',
-        department: 'CS',
-        semester: 1,
-        section: 'A',
-        admissionYear: 2021,
-        entryType: 'CET',
-        fatherName: 'Robert Doe',
-        motherName: 'Jane Doe',
-        address: '123 Main Street, Bangalore',
-        dateOfBirth: '2003-05-15',
-        gender: 'Male',
-        category: 'General',
-        bloodGroup: 'O+'
+        Name: 'John Doe'
       },
       {
         USN: '2KA21CS002',
-        name: 'Jane Smith',
-        email: 'jane.smith@college.edu',
-        phone: '9876543211',
-        department: 'CS',
-        semester: 1,
-        section: 'A',
-        admissionYear: 2021,
-        entryType: 'COMEDK',
-        fatherName: 'Michael Smith',
-        motherName: 'Sarah Smith',
-        address: '456 Oak Avenue, Mysore',
-        dateOfBirth: '2003-08-22',
-        gender: 'Female',
-        category: 'OBC',
-        bloodGroup: 'A+'
+        Name: 'Jane Smith'
+      },
+      {
+        USN: '2KA21CS003',
+        Name: 'Alice Johnson'
       }
     ];
 
@@ -241,6 +222,63 @@ const deactivateStudents = async (req, res) => {
       error: error.message
     });
   }
+};
+
+// Validate Excel format
+const validateExcelFormat = (students) => {
+  const errors = [];
+
+  // Check if file is empty
+  if (!students || students.length === 0) {
+    errors.push('Excel file is empty or has no data rows');
+    return errors;
+  }
+
+  // Check required columns
+  const firstRow = students[0];
+  const requiredColumns = ['USN', 'Name'];
+  const actualColumns = Object.keys(firstRow);
+
+  // Check if required columns exist
+  for (const column of requiredColumns) {
+    if (!actualColumns.includes(column)) {
+      errors.push(`Missing required column: ${column}`);
+    }
+  }
+
+  // Check for extra columns
+  const extraColumns = actualColumns.filter(col => !requiredColumns.includes(col));
+  if (extraColumns.length > 0) {
+    errors.push(`Unexpected columns found: ${extraColumns.join(', ')}. Only USN and Name columns are allowed.`);
+  }
+
+  // Validate data format for each row
+  students.forEach((student, index) => {
+    const rowNumber = index + 2; // Excel row number (header is row 1)
+    
+    // Check USN format
+    if (!student.USN) {
+      errors.push(`Row ${rowNumber}: USN is required`);
+    } else if (typeof student.USN !== 'string' && typeof student.USN !== 'number') {
+      errors.push(`Row ${rowNumber}: USN must be text or number`);
+    } else {
+      const usnStr = student.USN.toString().toUpperCase();
+      if (!usnStr.match(/^2KA\d{2}[A-Z]{2}\d{3}$/)) {
+        errors.push(`Row ${rowNumber}: Invalid USN format '${student.USN}'. Expected format: 2KA21CS001`);
+      }
+    }
+
+    // Check Name
+    if (!student.Name) {
+      errors.push(`Row ${rowNumber}: Name is required`);
+    } else if (typeof student.Name !== 'string') {
+      errors.push(`Row ${rowNumber}: Name must be text`);
+    } else if (student.Name.trim().length < 2) {
+      errors.push(`Row ${rowNumber}: Name must be at least 2 characters`);
+    }
+  });
+
+  return errors;
 };
 
 module.exports = {
