@@ -8,15 +8,23 @@ class AuthService {
       const response = await apiService.post<AuthResponse>('/auth/login', credentials);
       
       if (response.success && response.data) {
-        // Store tokens
-        apiService.setAuthTokens(
-          response.data.tokens.accessToken,
-          response.data.tokens.refreshToken
-        );
+        console.log('Auth response data:', response.data);
         
-        // Store user data in sessionStorage
-        sessionStorage.setItem('user', JSON.stringify(response.data.user));
-        sessionStorage.setItem('userRole', response.data.user.role.toLowerCase());
+        const { user, tokens } = response.data;
+        
+        if (tokens?.accessToken) {
+          // Store tokens
+          apiService.setAuthTokens(
+            tokens.accessToken,
+            tokens.refreshToken
+          );
+        }
+        
+        if (user?.role) {
+          // Store user data in sessionStorage
+          sessionStorage.setItem('user', JSON.stringify(user));
+          sessionStorage.setItem('userRole', user.role.toLowerCase());
+        }
         
         toast.success('Login successful!');
       }
@@ -34,15 +42,23 @@ class AuthService {
       const response = await apiService.post<AuthResponse>('/auth/register', userData);
       
       if (response.success && response.data) {
-        // Store tokens
-        apiService.setAuthTokens(
-          response.data.tokens.accessToken,
-          response.data.tokens.refreshToken
-        );
+        console.log('Register response data:', response.data);
         
-        // Store user data in sessionStorage
-        sessionStorage.setItem('user', JSON.stringify(response.data.user));
-        sessionStorage.setItem('userRole', response.data.user.role.toLowerCase());
+        const { user, tokens } = response.data;
+        
+        if (tokens?.accessToken) {
+          // Store tokens
+          apiService.setAuthTokens(
+            tokens.accessToken,
+            tokens.refreshToken
+          );
+        }
+        
+        if (user?.role) {
+          // Store user data in sessionStorage
+          sessionStorage.setItem('user', JSON.stringify(user));
+          sessionStorage.setItem('userRole', user.role.toLowerCase());
+        }
         
         toast.success('Registration successful!');
       }

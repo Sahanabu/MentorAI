@@ -15,6 +15,7 @@ class ApiService {
 
   constructor() {
     this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    console.log('API Base URL:', this.baseURL);
     
     this.api = axios.create({
       baseURL: `${this.baseURL}/api`,
@@ -142,9 +143,13 @@ class ApiService {
   }
 
   // Public methods
-  public setAuthTokens(accessToken: string, refreshToken: string): void {
-    this.setToken(accessToken);
-    this.setRefreshToken(refreshToken);
+  public setAuthTokens(accessToken: string, refreshToken?: string): void {
+    if (accessToken) {
+      this.setToken(accessToken);
+    }
+    if (refreshToken) {
+      this.setRefreshToken(refreshToken);
+    }
   }
 
   public clearAuthTokens(): void {

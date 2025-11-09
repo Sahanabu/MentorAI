@@ -21,6 +21,25 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Set demo credentials based on tab
+  const setDemoCredentials = (role: string) => {
+    switch(role) {
+      case 'student':
+        setEmail('student1@college.edu');
+        break;
+      case 'teacher':
+        setEmail('teacher1@college.edu');
+        break;
+      case 'mentor':
+        setEmail('mentor1@college.edu');
+        break;
+      case 'hod':
+        setEmail('hod.cs@college.edu');
+        break;
+    }
+    setPassword('password123');
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -29,37 +48,51 @@ const LoginPage = () => {
       return;
     }
 
+    setIsLoading(true);
     dispatch(setLoading(true));
     dispatch(setError(""));
 
     try {
       const credentials: LoginRequest = { email, password };
       const response = await authService.login(credentials);
-
-      dispatch(loginSuccess(response));
-
-      // Navigate based on role
-      switch(response.user.role) {
-        case 'STUDENT':
-          navigate('/student');
-          break;
-        case 'TEACHER':
-          navigate('/teacher');
-          break;
-        case 'MENTOR':
-          navigate('/mentor');
-          break;
-        case 'HOD':
-          navigate('/hod');
-          break;
-        default:
-          navigate('/');
+      
+      console.log('Login response:', response);
+      
+      if (response.success && response.data) {
+        dispatch(loginSuccess(response.data));
+        toast.success('Login successful!');
+        
+        // Get user role from sessionStorage (set by authService)
+        const userRole = sessionStorage.getItem('userRole');
+        console.log('User role:', userRole);
+        
+        // Navigate based on role
+        switch(userRole) {
+          case 'student':
+            navigate('/student');
+            break;
+          case 'teacher':
+            navigate('/teacher');
+            break;
+          case 'mentor':
+            navigate('/mentor');
+            break;
+          case 'hod':
+            navigate('/hod');
+            break;
+          default:
+            navigate('/');
+        }
+      } else {
+        throw new Error(response.message || 'Login failed');
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "Login failed. Please try again.";
+      console.error('Login error:', error);
+      const errorMessage = error.message || "Login failed. Please try again.";
       dispatch(setError(errorMessage));
       toast.error(errorMessage);
     } finally {
+      setIsLoading(false);
       dispatch(setLoading(false));
     }
   };
@@ -84,10 +117,10 @@ const LoginPage = () => {
         <CardContent>
           <Tabs defaultValue="student" className="w-full">
             <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="student">Student</TabsTrigger>
-              <TabsTrigger value="teacher">Teacher</TabsTrigger>
-              <TabsTrigger value="mentor">Mentor</TabsTrigger>
-              <TabsTrigger value="hod">HOD</TabsTrigger>
+              <TabsTrigger value="student" onClick={() => setDemoCredentials('student')}>Student</TabsTrigger>
+              <TabsTrigger value="teacher" onClick={() => setDemoCredentials('teacher')}>Teacher</TabsTrigger>
+              <TabsTrigger value="mentor" onClick={() => setDemoCredentials('mentor')}>Mentor</TabsTrigger>
+              <TabsTrigger value="hod" onClick={() => setDemoCredentials('hod')}>HOD</TabsTrigger>
             </TabsList>
 
             {['student', 'teacher', 'mentor', 'hod'].map((role) => (

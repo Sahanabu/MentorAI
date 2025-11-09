@@ -98,15 +98,30 @@ export interface HODDashboardData {
 
 class DashboardService {
   async getStudentDashboard(): Promise<StudentDashboardData> {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+    const userId = user._id || user.id;
     
-    // Get student analytics
-    const analyticsResponse = await apiService.get(`/analytics/student/${user.id}`);
-    const analytics = analyticsResponse.data;
+    if (!userId) {
+      throw new Error('User ID not found. Please login again.');
+    }
     
-    // Get latest prediction
-    const predictionResponse = await apiService.get(`/predictions/student/${user.id}/latest`);
-    const prediction = predictionResponse.data;
+    // Get student analytics with fallback
+    let analytics, prediction;
+    try {
+      const analyticsResponse = await apiService.get(`/analytics/student/${userId}`);
+      analytics = analyticsResponse.data;
+    } catch (error) {
+      console.warn('Analytics API not available, using fallback data');
+      analytics = this.getFallbackAnalytics();
+    }
+    
+    try {
+      const predictionResponse = await apiService.get(`/predictions/student/${userId}/latest`);
+      prediction = predictionResponse.data;
+    } catch (error) {
+      console.warn('Predictions API not available, using fallback data');
+      prediction = this.getFallbackPrediction();
+    }
     
     return {
       profile: {
@@ -138,18 +153,23 @@ class DashboardService {
   }
 
   async getMentorDashboard(): Promise<MentorDashboardData> {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+    const userId = user._id || user.id;
+    
+    if (!userId) {
+      throw new Error('User ID not found. Please login again.');
+    }
     
     // Get mentor analytics
-    const analyticsResponse = await apiService.get(`/analytics/mentor/${user.id}`);
+    const analyticsResponse = await apiService.get(`/analytics/mentor/${userId}`);
     const analytics = analyticsResponse.data;
     
     // Get mentor students
-    const studentsResponse = await apiService.get(`/mentors/${user.id}/students`);
+    const studentsResponse = await apiService.get(`/mentors/${userId}/students`);
     const students = studentsResponse.data;
     
     // Get at-risk students
-    const atRiskResponse = await apiService.get(`/mentors/${user.id}/at-risk`);
+    const atRiskResponse = await apiService.get(`/mentors/${userId}/at-risk`);
     const atRiskStudents = atRiskResponse.data;
     
     return {
@@ -180,7 +200,11 @@ class DashboardService {
   }
 
   async getHODDashboard(): Promise<HODDashboardData> {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+    
+    if (!user.department) {
+      throw new Error('User department not found. Please login again.');
+    }
     
     // Get department analytics
     const analyticsResponse = await apiService.get(`/analytics/department/${user.department}`);
