@@ -135,8 +135,12 @@ const canModifyAssessment = (req, res, next) => {
   next();
 };
 
+// Alias for backward compatibility
+const checkRole = (roles) => requireRole(...roles);
+
 module.exports = {
   requireRole,
+  checkRole,
   requireHOD,
   requireMentor,
   requireTeacher,
